@@ -140,3 +140,7 @@ class valve(selector):
         if open: output_index = -1
         else: output_index = 0
         self.set_output_index(output_index)
+
+    def get_open(self):
+        """Return current valve state."""
+        return self.output_index != 0
