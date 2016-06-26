@@ -20,7 +20,7 @@
 
 import sys, os, re, csv, copy
 import warnings
-from optparse import OptionParser
+from argparse import ArgumentParser
 from gnuradio import filter
 
 try:
@@ -2272,20 +2272,18 @@ class gr_plot_filter(QtGui.QMainWindow):
 
 
 def setup_options():
-    usage="%prog: [options] (input_filename)"
-    description = ""
-
-    parser = OptionParser(conflict_handler="resolve",
-                          usage=usage, description=description)
+    parser = ArgumentParser(conflict_handler="resolve")
+    parser.add_argument("files", metavar="FILE", nargs="+",
+            help="File with complex samples")
     return parser
 
 def launch(args, callback=None, restype=""):
     parser = setup_options()
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
     if callback == None:
-        app = Qt.QApplication(args)
-        gplt = gr_plot_filter(options, callback, restype)
+        app = Qt.QApplication(args.files)
+        gplt = gr_plot_filter(args, callback, restype)
         app.exec_()
         if gplt.iir:
             retobj = ApiObject()
@@ -2296,15 +2294,15 @@ def launch(args, callback=None, restype=""):
             retobj.update_all("fir", gplt.params, gplt.taps, 1)
             return retobj
     else:
-        gplt = gr_plot_filter(options, callback, restype)
+        gplt = gr_plot_filter(args, callback, restype)
         return gplt
 
 def main(args):
     parser = setup_options()
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
-    app = Qt.QApplication(args)
-    gplt = gr_plot_filter(options)
+    app = Qt.QApplication(args.files)
+    gplt = gr_plot_filter(args)
     app.exec_()
 
 if __name__ == '__main__':
