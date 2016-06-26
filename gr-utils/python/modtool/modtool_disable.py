@@ -36,11 +36,11 @@ class ModToolDisable(ModTool):
     def __init__(self):
         ModTool.__init__(self)
 
-    def setup(self, options, args):
-        ModTool.setup(self, options, args)
+    def setup(self, args):
+        ModTool.setup(self, args)
 
-        if options.block_name is not None:
-            self._info['pattern'] = options.block_name
+        if args.block_name is not None:
+            self._info['pattern'] = args.block_name
         elif len(args) >= 2:
             self._info['pattern'] = args[1]
         else:
