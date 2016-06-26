@@ -20,21 +20,21 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 import sys
 
 def main():
-    parser = OptionParser()
-    parser.add_option("-f", "--file", default=None,
+    parser = ArgumentParser()
+    parser.add_argument("-f", "--file", default=None,
                       help="Choose file to read data from.")
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if options.file == None:
+    if args.file == None:
         print "Must specify file to read from using '-f'."
         sys.exit(1)
-    print "Using", options.file, "for data."
+    print "Using", args.file, "for data."
 
-    f = open(options.file, 'r')
+    f = open(args.file, 'r')
     runs = []
     count = 0
     current = 0
