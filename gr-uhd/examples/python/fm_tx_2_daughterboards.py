@@ -35,8 +35,8 @@ from gnuradio import filter
 from gnuradio import analog
 from gnuradio import blocks
 from gnuradio.eng_notation import num_to_str, str_to_num
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import math
 import sys
 
@@ -90,18 +90,18 @@ class my_top_block(gr.top_block):
         gr.top_block.__init__(self)
 
         usage = "%prog: [options] tx-freq0 tx-freq1"
-        parser = OptionParser (option_class=eng_option, usage=usage)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser = ArgumentParser(usage=usage)
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
 	                  help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("-s", "--samp-rate", type="eng_float", default=320e3,
+        parser.add_argument("-s", "--samp-rate", type=eng_float, default=320e3,
                           help="set sample rate [default=%default]")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_argument("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
-        (options, args) = parser.parse_args ()
+        args = parser.parse_args()
 
         if len(args) != 2:
             parser.print_help()
@@ -113,11 +113,11 @@ class my_top_block(gr.top_block):
         # ----------------------------------------------------------------
         # Set up USRP to transmit on both daughterboards
 
-        d = uhd.find_devices(uhd.device_addr(options.args))
+        d = uhd.find_devices(uhd.device_addr(args.args))
         uhd_type = d[0].get('type')
 
         stream_args = uhd.stream_args('fc32', channels=range(2))
-        self.u = uhd.usrp_sink(device_addr=options.args, stream_args=stream_args)
+        self.u = uhd.usrp_sink(device_addr=args.args, stream_args=stream_args)
 
         # Set up USRP system based on type
         if(uhd_type == "usrp"):
@@ -143,7 +143,7 @@ class my_top_block(gr.top_block):
         self.set_freq(tr0, 0)
         self.set_freq(tr1, 1)
 
-        self.usrp_rate  = options.samp_rate
+        self.usrp_rate  = args.samp_rate
 
         self.u.set_samp_rate(self.usrp_rate)
         dev_rate = self.u.get_samp_rate()
@@ -166,22 +166,22 @@ class my_top_block(gr.top_block):
         # and wire them up
         self.connect(intl, resamp, self.u)
 
-        if options.gain is None:
+        if args.gain is None:
             # if no gain was specified, use the mid-point in dB
             g = self.u.get_gain_range()
-            options.gain = float(g.start()+g.stop())/2.0
+            args.gain = float(g.start()+g.stop())/2.0
 
-        self.set_gain(options.gain, 0)
-        self.set_gain(options.gain, 1)
+        self.set_gain(args.gain, 0)
+        self.set_gain(args.gain, 1)
 
         # Set the subdevice spec
-        if(options.spec):
-            self.u.set_subdev_spec(options.spec, 0)
+        if(args.spec):
+            self.u.set_subdev_spec(args.spec, 0)
 
         # Set the antenna
-        if(options.antenna):
-            self.u.set_antenna(options.antenna, 0)
-            self.u.set_antenna(options.antenna, 1)
+        if(args.antenna):
+            self.u.set_antenna(args.antenna, 0)
+            self.u.set_antenna(args.antenna, 1)
 
     def set_freq(self, target_freq, chan):
         """
