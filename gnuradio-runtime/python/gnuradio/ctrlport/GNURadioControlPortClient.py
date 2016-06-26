@@ -77,7 +77,7 @@ class GNURadioControlPortClient():
 
     Args:
         argv: List of command line arguments. Future implementations may parse the argument list
-            for OptionParser style key / value pairs, however the current implementation
+            for ArgumentParser style key / value pairs, however the current implementation
             simply takes argv[1] and argv[2] as the connection hostname and port, respectively.
 
     Example Usage:
