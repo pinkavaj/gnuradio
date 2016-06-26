@@ -42,10 +42,10 @@ class ModToolMakeXML(ModTool):
     def setup_parser(self):
         """ Initialise the option parser for 'gr_modtool makexml' """
         parser = ModTool.setup_parser(self)
-        parser.usage = """%prog info [options]. \n Call %prog without any options to run it interactively.
+        parser.usage = """%s
 
         Note: This does not work on Python blocks!
-        """
+        """ % parser.usage
         return parser
 
     def setup(self, options, args):
