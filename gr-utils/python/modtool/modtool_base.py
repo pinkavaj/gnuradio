@@ -22,7 +22,7 @@
 
 import os
 import re
-from optparse import OptionParser, OptionGroup
+from argparse import ArgumentParser
 
 from gnuradio import gr
 from util_functions import get_modname
@@ -50,34 +50,31 @@ class ModTool(object):
     def setup_parser(self):
         """ Init the option parser. If derived classes need to add options,
         override this and call the parent function. """
-        parser = OptionParser(add_help_option=False)
-        parser.usage = '%prog ' + self.name + ' [options] <PATTERN> \n' + \
-                       ' Call "%prog ' + self.name + '" without any options to run it interactively.'
-        ogroup = OptionGroup(parser, "General options")
-        ogroup.add_option("-h", "--help", action="help", help="Displays this help message.")
-        ogroup.add_option("-d", "--directory", type="string", default=".",
+        parser = ArgumentParser(usage='%(prog)s ' + self.name + ' [options] <PATTERN> \n' + \
+                ' Call "%(prog)s ' + self.name + '" without any options to run it interactively.')
+        args_group = parser.add_argument_group(title="General options")
+        args_group.add_argument("-d", "--directory", default=".",
                 help="Base directory of the module. Defaults to the cwd.")
-        ogroup.add_option("-n", "--module-name", type="string", default=None,
+        args_group.add_argument("-n", "--module-name",
                 help="Use this to override the current module's name (is normally autodetected).")
-        ogroup.add_option("-N", "--block-name", type="string", default=None,
+        args_group.add_argument("-N", "--block-name",
                 help="Name of the block, where applicable.")
-        ogroup.add_option("--skip-lib", action="store_true", default=False,
+        args_group.add_argument("--skip-lib", action="store_true",
                 help="Don't do anything in the lib/ subdirectory.")
-        ogroup.add_option("--skip-swig", action="store_true", default=False,
+        args_group.add_argument("--skip-swig", action="store_true",
                 help="Don't do anything in the swig/ subdirectory.")
-        ogroup.add_option("--skip-python", action="store_true", default=False,
+        args_group.add_argument("--skip-python", action="store_true",
                 help="Don't do anything in the python/ subdirectory.")
-        ogroup.add_option("--skip-grc", action="store_true", default=False,
+        args_group.add_argument("--skip-grc", action="store_true",
                 help="Don't do anything in the grc/ subdirectory.")
-        ogroup.add_option("--scm-mode", type="choice", choices=('yes', 'no', 'auto'),
+        args_group.add_argument("--scm-mode", choices=('yes', 'no', 'auto'),
                 default=gr.prefs().get_string('modtool', 'scm_mode', 'no'),
-                help="Use source control management (yes, no or auto).")
-        ogroup.add_option("-y", "--yes", action="store_true", default=False,
+                help="Use source control management [ yes | no | auto ]).")
+        args_group.add_argument("-y", "--yes", action="store_true",
                 help="Answer all questions with 'yes'. This can overwrite and delete your files, so be careful.")
-        parser.add_option_group(ogroup)
         return parser
 
-    def setup(self, options, args):
+    def setup(self, options):
         """ Initialise all internal variables, such as the module name etc. """
         self._dir = options.directory
         if not self._check_directory(self._dir):
