@@ -22,7 +22,6 @@
 
 import os
 import re
-from optparse import OptionGroup
 
 from util_functions import append_re_line_sequence, ask_yes_no
 from cmakefile_editor import CMakeFileEditor
@@ -43,10 +42,10 @@ class ModToolRename(ModTool):
 
     def setup_parser(self):
         parser = ModTool.setup_parser(self)
-        ogroup = OptionGroup(parser, "Rename module options")
-        ogroup.add_option("-o", "--old-name", type="string", default=None, help="Current name of the block to rename.")
-        ogroup.add_option("-u", "--new-name", type="string", default=None, help="New name of the block.")
-        parser.add_option_group(ogroup)
+        args_group = parser.add_argument_group(title="Rename module options")
+        args_group.add_option("-o", "--old-name",
+                help="Current name of the block to rename.")
+        args_group.add_option("-u", "--new-name", help="New name of the block.")
         return parser
 
     def setup(self, options, args):
