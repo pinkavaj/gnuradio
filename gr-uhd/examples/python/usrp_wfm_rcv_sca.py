@@ -54,10 +54,10 @@ from gnuradio import gr, audio, uhd
 from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import analog
-from gnuradio.eng_option import eng_option
+from gnuradio.eng_arg import eng_float, intx
 from gnuradio.wxgui import slider, powermate
 from gnuradio.wxgui import stdgui2, fftsink2, form
-from optparse import OptionParser
+from argparse import ArgumentParser
 import sys
 import math
 import wx
@@ -66,31 +66,27 @@ class wfm_rx_sca_block (stdgui2.std_top_block):
     def __init__(self,frame,panel,vbox,argv):
         stdgui2.std_top_block.__init__ (self,frame,panel,vbox,argv)
 
-        parser=OptionParser(option_class=eng_option)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser=ArgumentParser()
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
 	                  help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("-f", "--freq", type="eng_float", default=100.1e6,
+        parser.add_argument("-f", "--freq", type=eng_float, default=100.1e6,
                           help="set frequency to FREQ", metavar="FREQ")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_argument("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
-        parser.add_option("-V", "--volume", type="eng_float", default=None,
+        parser.add_argument("-V", "--volume", type=eng_float, default=None,
                           help="set volume (default is midpoint)")
-        parser.add_option("-O", "--audio-output", type="string", default="default",
+        parser.add_argument("-O", "--audio-output", default="default",
                           help="pcm device name.  E.g., hw:0,0 or surround51 or /dev/dsp")
-        parser.add_option("", "--freq-min", type="eng_float", default=87.9e6,
+        parser.add_argument("", "--freq-min", type=eng_float, default=87.9e6,
                           help="Set a minimum frequency [default=%default]")
-        parser.add_option("", "--freq-max", type="eng_float", default=108.1e6,
+        parser.add_argument("", "--freq-max", type=eng_float, default=108.1e6,
                           help="Set a maximum frequency [default=%default]")
 
-        (options, args) = parser.parse_args()
-        if len(args) != 0:
-            parser.print_help()
-            sys.exit(1)
-
+        args = parser.parse_args()
         self.frame = frame
         self.panel = panel
 
@@ -98,20 +94,20 @@ class wfm_rx_sca_block (stdgui2.std_top_block):
         self.state = "FREQ"
         self.freq = 0
 
-        self.fm_freq_min = options.freq_min
-        self.fm_freq_max = options.freq_max
+        self.fm_freq_min = args.freq_min
+        self.fm_freq_max = args.freq_max
 
         # build graph
 
-        self.u = uhd.usrp_source(device_addr=options.args, stream_args=uhd.stream_args('fc32'))
+        self.u = uhd.usrp_source(device_addr=args.args, stream_args=uhd.stream_args('fc32'))
 
         # Set the subdevice spec
-        if(options.spec):
-            self.u.set_subdev_spec(options.spec, 0)
+        if(args.spec):
+            self.u.set_subdev_spec(args.spec, 0)
 
         # Set the antenna
-        if(options.antenna):
-            self.u.set_antenna(options.antenna, 0)
+        if(args.antenna):
+            self.u.set_antenna(args.antenna, 0)
 
         usrp_rate  = 320e3
         demod_rate = 320e3
@@ -185,7 +181,7 @@ class wfm_rx_sca_block (stdgui2.std_top_block):
 
         # sound card as final sink
         self.audio_sink = audio.sink(int (audio_rate),
-                                     options.audio_output,
+                                     args.audio_output,
                                      False)  # ok_to_block
 
         # now wire it all together
@@ -197,28 +193,28 @@ class wfm_rx_sca_block (stdgui2.std_top_block):
 
         self._build_gui(vbox, usrp_rate, demod_rate, sca_demod_rate, audio_rate)
 
-        if options.gain is None:
+        if args.gain is None:
             # if no gain was specified, use the mid-point in dB
             g = self.u.get_gain_range()
-            options.gain = float(g.start()+g.stop())/2
+            args.gain = float(g.start()+g.stop())/2
 
-        if options.volume is None:
+        if args.volume is None:
             g = self.volume_range()
-            options.volume = float(g[0]+g[1])/2
+            args.volume = float(g[0]+g[1])/2
 
         frange = self.u.get_freq_range()
         if(frange.start() > self.fm_freq_max or frange.stop() <  self.fm_freq_min):
             sys.stderr.write("Radio does not support required frequency range.\n")
             sys.exit(1)
-        if(options.freq < self.fm_freq_min or options.freq > self.fm_freq_max):
+        if(args.freq < self.fm_freq_min or args.freq > self.fm_freq_max):
             sys.stderr.write("Requested frequency is outside of required frequency range.\n")
             sys.exit(1)
 
         # set initial values
 
-        self.set_gain(options.gain)
-        self.set_vol(options.volume)
-        if not(self.set_freq(options.freq)):
+        self.set_gain(args.gain)
+        self.set_vol(args.volume)
+        if not(self.set_freq(args.freq)):
             self._set_status_msg("Failed to set initial frequency")
         self.set_sca_freq(67000)  # A common SCA Frequency
 
