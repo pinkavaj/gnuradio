@@ -37,8 +37,8 @@
 
 from gnuradio import gr, digital
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 # from current dir
 from receive_path  import receive_path
@@ -94,21 +94,21 @@ class my_top_block(gr.top_block):
 
         # Get the modulation's bits_per_symbol
         args = mod_class.extract_kwargs_from_options(options)
-        symbol_rate = options.bitrate / mod_class(**args).bits_per_symbol()
+        symbol_rate = args.bitrate / mod_class(**args).bits_per_symbol()
 
-        self.source = uhd_receiver(options.args, symbol_rate,
-                                   options.samples_per_symbol,
-                                   options.rx_freq, options.rx_gain,
-                                   options.spec, options.antenna,
-                                   options.verbose)
+        self.source = uhd_receiver(args.args, symbol_rate,
+                                   args.samples_per_symbol,
+                                   args.rx_freq, args.rx_gain,
+                                   args.spec, args.antenna,
+                                   args.verbose)
         
-        self.sink = uhd_transmitter(options.args, symbol_rate,
-                                    options.samples_per_symbol,
-                                    options.tx_freq, options.tx_gain,
-                                    options.spec, options.antenna,
-                                    options.verbose)
+        self.sink = uhd_transmitter(args.args, symbol_rate,
+                                    args.samples_per_symbol,
+                                    args.tx_freq, args.tx_gain,
+                                    args.spec, args.antenna,
+                                    args.verbose)
         
-        options.samples_per_symbol = self.source._sps
+        args.samples_per_symbol = self.source._sps
 
         self.txpath = transmit_path(mod_class, options)
         self.rxpath = receive_path(demod_class, rx_callback, options)
@@ -207,39 +207,35 @@ def main():
     mods = digital.modulation_utils.type_1_mods()
     demods = digital.modulation_utils.type_1_demods()
 
-    parser = OptionParser (option_class=eng_option, conflict_handler="resolve")
-    expert_grp = parser.add_option_group("Expert")
-    parser.add_option("-m", "--modulation", type="choice", choices=mods.keys(),
+    parser = ArgumentParser(conflict_handler="resolve")
+    expert_grp = parser.add_argument_group("Expert")
+    parser.add_argument("-m", "--modulation", choices=mods.keys(),
                       default='gmsk',
-                      help="Select modulation from: %s [default=%%default]"
+                      help="Select modulation from: %s [default=%%(default)r]"
                             % (', '.join(mods.keys()),))
 
-    parser.add_option("-s", "--size", type="eng_float", default=1500,
-                      help="set packet size [default=%default]")
-    parser.add_option("-v","--verbose", action="store_true", default=False)
-    expert_grp.add_option("-c", "--carrier-threshold", type="eng_float", default=30,
-                          help="set carrier detect threshold (dB) [default=%default]")
-    expert_grp.add_option("","--tun-device-filename", default="/dev/net/tun",
-                          help="path to tun device file [default=%default]")
+    parser.add_argument("-s", "--size", type=eng_float, default=1500,
+                      help="set packet size [default=%(default)r]")
+    parser.add_argument("-v","--verbose", action="store_true")
+    expert_grp.add_option("-c", "--carrier-threshold", type=eng_float, default=30,
+                          help="set carrier detect threshold (dB) [default=%(default)r]")
+    expert_grp.add_option("--tun-device-filename", default="/dev/net/tun",
+                          help="path to tun device file [default=%(default)r]")
 
-    transmit_path.add_options(parser, expert_grp)
-    receive_path.add_options(parser, expert_grp)
-    uhd_receiver.add_options(parser)
-    uhd_transmitter.add_options(parser)
+    transmit_path.add_arguments(parser, expert_grp)
+    receive_path.add_arguments(parser, expert_grp)
+    uhd_receiver.add_arguments(parser)
+    uhd_transmitter.add_arguments(parser)
 
     for mod in mods.values():
-        mod.add_options(expert_grp)
+        mod.add_arguments(expert_grp)
 
     for demod in demods.values():
-        demod.add_options(expert_grp)
+        demod.add_arguments(expert_grp)
 
-    (options, args) = parser.parse_args ()
-    if len(args) != 0:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-
+    args = parser.parse_args()
     # open the TUN/TAP interface
-    (tun_fd, tun_ifname) = open_tun_interface(options.tun_device_filename)
+    (tun_fd, tun_ifname) = open_tun_interface(args.tun_device_filename)
 
     # Attempt to enable realtime scheduling
     r = gr.enable_realtime_scheduling()
@@ -253,8 +249,8 @@ def main():
     mac = cs_mac(tun_fd, verbose=True)
 
     # build the graph (PHY)
-    tb = my_top_block(mods[options.modulation],
-                      demods[options.modulation],
+    tb = my_top_block(mods[args.modulation],
+                      demods[args.modulation],
                       mac.phy_rx_callback,
                       options)
 
@@ -265,13 +261,13 @@ def main():
             eng_notation.num_to_str(tb.txpath.bitrate()),
             eng_notation.num_to_str(tb.rxpath.bitrate()))
              
-    print "modulation:     %s"   % (options.modulation,)
-    print "freq:           %s"      % (eng_notation.num_to_str(options.tx_freq))
+    print "modulation:     %s"   % (args.modulation,)
+    print "freq:           %s"      % (eng_notation.num_to_str(args.tx_freq))
     print "bitrate:        %sb/sec" % (eng_notation.num_to_str(tb.txpath.bitrate()),)
     print "samples/symbol: %3d" % (tb.txpath.samples_per_symbol(),)
 
-    tb.rxpath.set_carrier_threshold(options.carrier_threshold)
-    print "Carrier sense threshold:", options.carrier_threshold, "dB"
+    tb.rxpath.set_carrier_threshold(args.carrier_threshold)
+    print "Carrier sense threshold:", args.carrier_threshold, "dB"
     
     print
     print "Allocated virtual ethernet interface: %s" % (tun_ifname,)
