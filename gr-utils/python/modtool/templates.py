@@ -569,7 +569,7 @@ Templates['grc_xml'] = '''<?xml version="1.0"?>
 
 # Usage
 Templates['usage'] = '''
-gr_modtool <command> [options] -- Run <command> with the given options.
+gr_modtool <command> [options] -- Run <command> with the given args.
 gr_modtool help -- Show a list of commands.
 gr_modtool help <command> -- Shows the help for a given command. '''
 
