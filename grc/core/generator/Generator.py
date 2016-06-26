@@ -89,7 +89,7 @@ class TopBlockGenerator(object):
         """generate output and write it to files"""
         # Do throttle warning
         throttling_blocks = filter(lambda b: b.throtteling(), self._flow_graph.get_enabled_blocks())
-        if not throttling_blocks and not self._generate_options.startswith('hb'):
+        if not throttling_blocks and not self._generate_args.startswith('hb'):
             Messages.send_warning("This flow graph may not have flow control: "
                                   "no audio or RF hardware blocks found. "
                                   "Add a Misc->Throttle block to your flow "
