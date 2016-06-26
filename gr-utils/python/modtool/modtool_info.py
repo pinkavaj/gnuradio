@@ -21,7 +21,6 @@
 """ Returns information about a module """
 
 import os
-from optparse import OptionGroup
 
 from modtool_base import ModTool, ModToolException
 from util_functions import get_modname
@@ -41,13 +40,11 @@ class ModToolInfo(ModTool):
     def setup_parser(self):
         """ Initialise the option parser for 'gr_modtool info' """
         parser = ModTool.setup_parser(self)
-        parser.usage = '%prog info [options]. \n Call %prog without any options to run it interactively.'
-        ogroup = OptionGroup(parser, "Info options")
-        ogroup.add_option("--python-readable", action="store_true", default=None,
+        args_group = parser.add_argument_group(title="Info options")
+        args_group.add_option("--python-readable", action="store_true", default=None,
                 help="Return the output in a format that's easier to read for Python scripts.")
-        ogroup.add_option("--suggested-dirs", default=None, type="string",
+        args_group.add_option("--suggested-dirs", default=None,
                 help="Suggest typical include dirs if nothing better can be detected.")
-        parser.add_option_group(ogroup)
         return parser
 
     def setup(self, options, args):
