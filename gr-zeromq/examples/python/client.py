@@ -28,8 +28,8 @@ from gnuradio import gr
 from gnuradio import blocks
 from gnuradio import analog
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import numpy
 import sys
 from threading import Thread
@@ -47,7 +47,7 @@ class top_block(gr.top_block):
         # socket addresses
         rpc_adr = "tcp://*:6667"
         probe_adr = "tcp://*:5557"
-        source_adr = "tcp://"+self.options.servername+":5555"
+        source_adr = "tcp://"+self.args.servername+":5555"
 
         # blocks
         #self.zmq_source = zeromq.req_source(gr.sizeof_float, 1, source_adr)
@@ -83,10 +83,10 @@ class top_block(gr.top_block):
 ###############################################################################
 def parse_options():
     """ Options parser. """
-    parser = OptionParser(option_class=eng_option, usage="%prog: [options]")
-    parser.add_option("-s", "--servername", type="string", default="localhost",
+    parser = ArgumentParser(usage="%prog: [options]")
+    parser.add_argument("-s", "--servername", default="localhost",
                       help="Server hostname")
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
     return options
 
 ###############################################################################
