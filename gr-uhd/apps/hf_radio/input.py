@@ -66,13 +66,13 @@ class uhd_input(gr.hier_block2):
         self.src.set_gain(gain, 0)
 
     @staticmethod
-    def add_options(parser):
-        parser.add_option("-a", "--address", type="string",
+    def add_arguments(parser):
+        parser.add_argument("-a", "--address",
                           default="addr=192.168.10.2",
                           help="Address of UHD device, [default=%default]")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("-f", "--freq", type="eng_float", default=None,
+        parser.add_argument("-f", "--freq", type=eng_float, default=None,
                           help="set frequency to FREQ", metavar="FREQ")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_argument("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
