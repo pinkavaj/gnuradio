@@ -144,33 +144,33 @@ class FlowGraph(gr.top_block):
     def __init__(self, options):
         gr.top_block.__init__(self)
 
-        if options.input_file is not None:
-            src = blocks.file_source(gr.sizeof_gr_complex, options.filename, repeat=True)
+        if args.input_file is not None:
+            src = blocks.file_source(gr.sizeof_gr_complex, args.filename, repeat=True)
         else:
             src = blocks.vector_source_c((.5,) * int(1e6) * 2, repeat=True)
         # Setup USRP
-        self.u = uhd.usrp_sink(options.args, uhd.stream_args('fc32'), "packet_len")
-        if(options.spec):
-            self.u.set_subdev_spec(options.spec, 0)
-        if(options.antenna):
-            self.u.set_antenna(options.antenna, 0)
-        self.u.set_samp_rate(options.rate)
+        self.u = uhd.usrp_sink(args.args, uhd.stream_args('fc32'), "packet_len")
+        if(args.spec):
+            self.u.set_subdev_spec(args.spec, 0)
+        if(args.antenna):
+            self.u.set_antenna(args.antenna, 0)
+        self.u.set_samp_rate(args.rate)
         # Gain is set in the hopper block
-        if options.gain is None:
+        if args.gain is None:
             g = self.u.get_gain_range()
-            options.gain = float(g.start()+g.stop())/2.0
-        print "-- Setting gain to {} dB".format(options.gain)
-        r = self.u.set_center_freq(options.freq)
+            args.gain = float(g.start()+g.stop())/2.0
+        print "-- Setting gain to {} dB".format(args.gain)
+        r = self.u.set_center_freq(args.freq)
         if not r:
             print '[ERROR] Failed to set base frequency.'
             raise SystemExit, 1
         hopper_block = FrequencyHopperSrc(
-                options.num_bursts, options.num_channels,
-                options.freq_delta, options.freq, options.dsp,
-                options.samp_per_burst, 1.0, options.hop_time / 1000.,
-                options.post_tuning,
-                options.gain,
-                options.verbose,
+                args.num_bursts, args.num_channels,
+                args.freq_delta, args.freq, args.dsp,
+                args.samp_per_burst, 1.0, args.hop_time / 1000.,
+                args.post_tuning,
+                args.gain,
+                args.verbose,
         )
         self.connect(src, hopper_block, self.u)
 
