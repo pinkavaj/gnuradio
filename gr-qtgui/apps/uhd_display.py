@@ -25,8 +25,8 @@ from gnuradio import filter
 from gnuradio import blocks
 from gnuradio import uhd
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import sys
 
 try:
@@ -172,28 +172,28 @@ class my_top_block(gr.top_block):
 
         self.qapp = QtGui.QApplication(sys.argv)
 
-        self.u = uhd.usrp_source(device_addr=options.address, stream_args=uhd.stream_args('fc32'))
+        self.u = uhd.usrp_source(device_addr=args.address, stream_args=uhd.stream_args('fc32'))
 
-        if(options.antenna):
-            self.u.set_antenna(options.antenna, 0)
+        if(args.antenna):
+            self.u.set_antenna(args.antenna, 0)
 
-        self.set_bandwidth(options.samp_rate)
+        self.set_bandwidth(args.samp_rate)
 
-        if options.gain is None:
+        if args.gain is None:
             # if no gain was specified, use the mid-point in dB
             g = self.u.get_gain_range()
-            options.gain = float(g.start()+g.stop())/2
-        self.set_gain(options.gain)
+            args.gain = float(g.start()+g.stop())/2
+        self.set_gain(args.gain)
 
-        if options.freq is None:
+        if args.freq is None:
             # if no freq was specified, use the mid-point
             r = self.u.get_freq_range()
-            options.freq = float(r.start()+r.stop())/2
-        self.set_frequency(options.freq)
+            args.freq = float(r.start()+r.stop())/2
+        self.set_frequency(args.freq)
 
-        self._fftsize = options.fft_size
+        self._fftsize = args.fft_size
 
-        self.snk = qtgui.sink_c(options.fft_size,
+        self.snk = qtgui.sink_c(args.fft_size,
                                 filter.firdes.WIN_BLACKMAN_hARRIS,
                                 self._freq, self._bandwidth,
                                 "UHD Display",
@@ -287,24 +287,20 @@ class my_top_block(gr.top_block):
         self.unlock()
 
 def main ():
-    parser = OptionParser(option_class=eng_option)
-    parser.add_option("-a", "--address", type="string", default="addr=192.168.10.2",
+    parser = ArgumentParser()
+    parser.add_argument("-a", "--address", default="addr=192.168.10.2",
                       help="Address of UHD device, [default=%default]")
-    parser.add_option("-A", "--antenna", type="string", default=None,
+    parser.add_argument("-A", "--antenna", default=None,
                       help="select Rx Antenna where appropriate")
-    parser.add_option("-s", "--samp-rate", type="eng_float", default=1e6,
+    parser.add_argument("-s", "--samp-rate", type=eng_float, default=1e6,
                       help="set sample rate (bandwidth) [default=%default]")
-    parser.add_option("-f", "--freq", type="eng_float", default=2412e6,
+    parser.add_argument("-f", "--freq", type=eng_float, default=2412e6,
                       help="set frequency to FREQ", metavar="FREQ")
-    parser.add_option("-g", "--gain", type="eng_float", default=None,
+    parser.add_argument("-g", "--gain", type=eng_float, default=None,
                       help="set gain in dB (default is midpoint)")
-    parser.add_option("--fft-size", type="int", default=2048,
+    parser.add_argument("--fft-size", type=int, default=2048,
                       help="Set number of FFT bins [default=%default]")
-    (options, args) = parser.parse_args()
-
-    if len(args) != 0:
-        parser.print_help()
-        sys.exit(1)
+    args = parser.parse_args()
 
     tb = my_top_block(options)
     tb.start()
