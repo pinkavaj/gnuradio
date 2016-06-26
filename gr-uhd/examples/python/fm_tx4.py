@@ -36,8 +36,8 @@ from gnuradio import gr, eng_notation
 from gnuradio import uhd
 from gnuradio import analog
 from gnuradio import blocks
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import math
 import sys
 
@@ -83,34 +83,30 @@ class fm_tx_block(stdgui2.std_top_block):
         MAX_CHANNELS = 7
         stdgui2.std_top_block.__init__ (self, frame, panel, vbox, argv)
 
-        parser = OptionParser (option_class=eng_option)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser = ArgumentParser()
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
 	                  help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("-s", "--samp-rate", type="eng_float", default=400e3,
+        parser.add_argument("-s", "--samp-rate", type=eng_float, default=400e3,
                           help="set sample rate (bandwidth) [default=%default]")
-        parser.add_option("-f", "--freq", type="eng_float", default=None,
+        parser.add_argument("-f", "--freq", type=eng_float, default=None,
                           help="set frequency to FREQ", metavar="FREQ")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_argument("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
-        parser.add_option("-n", "--nchannels", type="int", default=4,
+        parser.add_argument("-n", "--nchannels", type=int, default=4,
                            help="number of Tx channels [1,4]")
-        #parser.add_option("","--debug", action="store_true", default=False,
+        #parser.add_argument("","--debug", action="store_true", default=False,
         #                  help="Launch Tx debugger")
-        (options, args) = parser.parse_args ()
+        args = parser.parse_args()
 
-        if len(args) != 0:
-            parser.print_help()
-            sys.exit(1)
-
-        if options.nchannels < 1 or options.nchannels > MAX_CHANNELS:
+        if args.nchannels < 1 or args.nchannels > MAX_CHANNELS:
             sys.stderr.write ("fm_tx4: nchannels out of range.  Must be in [1,%d]\n" % MAX_CHANNELS)
             sys.exit(1)
 
-        if options.freq is None:
+        if args.freq is None:
             sys.stderr.write("fm_tx4: must specify frequency with -f FREQ\n")
             parser.print_help()
             sys.exit(1)
@@ -118,30 +114,30 @@ class fm_tx_block(stdgui2.std_top_block):
         # ----------------------------------------------------------------
         # Set up constants and parameters
 
-        self.u = uhd.usrp_sink(device_addr=options.args, stream_args=uhd.stream_args('fc32'))
+        self.u = uhd.usrp_sink(device_addr=args.args, stream_args=uhd.stream_args('fc32'))
 
         # Set the subdevice spec
-        if(options.spec):
-            self.u.set_subdev_spec(options.spec, 0)
+        if(args.spec):
+            self.u.set_subdev_spec(args.spec, 0)
 
         # Set the antenna
-        if(options.antenna):
-            self.u.set_antenna(options.antenna, 0)
+        if(args.antenna):
+            self.u.set_antenna(args.antenna, 0)
 
-        self.usrp_rate = options.samp_rate
+        self.usrp_rate = args.samp_rate
         self.u.set_samp_rate(self.usrp_rate)
         self.usrp_rate = self.u.get_samp_rate()
 
         self.sw_interp = 10
         self.audio_rate = self.usrp_rate / self.sw_interp    # 32 kS/s
 
-        if options.gain is None:
+        if args.gain is None:
             # if no gain was specified, use the mid-point in dB
             g = self.u.get_gain_range()
-            options.gain = float(g.start()+g.stop())/2
+            args.gain = float(g.start()+g.stop())/2
 
-        self.set_gain(options.gain)
-        self.set_freq(options.freq)
+        self.set_gain(args.gain)
+        self.set_freq(args.freq)
 
         self.sum = blocks.add_cc ()
 
@@ -150,12 +146,12 @@ class fm_tx_block(stdgui2.std_top_block):
         offset = (0 * step, 1 * step, -1 * step,
                   2 * step, -2 * step, 3 * step, -3 * step)
 
-        for i in range (options.nchannels):
+        for i in range (args.nchannels):
             t = pipeline("audio-%d.dat" % (i % 4), offset[i],
                          self.audio_rate, self.usrp_rate)
             self.connect(t, (self.sum, i))
 
-        self.gain = blocks.multiply_const_cc (1.0 / options.nchannels)
+        self.gain = blocks.multiply_const_cc (1.0 / args.nchannels)
 
         # connect it all
         self.connect (self.sum, self.gain)
@@ -172,7 +168,7 @@ class fm_tx_block(stdgui2.std_top_block):
             vbox.Add (post_mod.win, 1, wx.EXPAND)
 
 
-        #if options.debug:
+        #if args.debug:
         #    self.debugger = tx_debug_gui.tx_debug_gui(self.subdev)
         #    self.debugger.Show(True)
 
