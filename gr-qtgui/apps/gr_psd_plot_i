@@ -54,7 +54,7 @@ class psd_plot_i(plot_base.plot_base):
 
 def main():
     description = "Plots the PSDs of a list of files. Files are a binary list of integers."
-    (options, args) = plot_base.setup_options(description)
+    args = plot_base.setup_options(description)
 
     filelist = list(args)
     max_nsamples = plot_base.find_max_nsamples(filelist)
