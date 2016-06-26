@@ -24,10 +24,10 @@ from gnuradio import gr, audio, uhd
 from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import analog
-from gnuradio.eng_option import eng_option
+from gnuradio.eng_arg import eng_float, intx
 from gnuradio.wxgui import slider, powermate
 from gnuradio.wxgui import stdgui2, fftsink2, form
-from optparse import OptionParser
+from argparse import ArgumentParser
 import sys
 import math
 import wx
@@ -40,30 +40,26 @@ class my_top_block (stdgui2.std_top_block):
     def __init__(self,frame,panel,vbox,argv):
         stdgui2.std_top_block.__init__ (self,frame,panel,vbox,argv)
 
-        parser=OptionParser(option_class=eng_option)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser=ArgumentParser()
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
 	                  help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("-f", "--freq", type="eng_float", default=146.585e6,
+        parser.add_argument("-f", "--freq", type=eng_float, default=146.585e6,
                           help="set frequency to FREQ", metavar="FREQ")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_argument("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
-        parser.add_option("-V", "--volume", type="eng_float", default=None,
+        parser.add_argument("-V", "--volume", type=eng_float, default=None,
                           help="set volume (default is midpoint)")
-        parser.add_option("-O", "--audio-output", type="string", default="default",
+        parser.add_argument("-O", "--audio-output", default="default",
                           help="pcm device name.  E.g., hw:0,0 or surround51 or /dev/dsp")
-        parser.add_option("-N", "--no-gui", action="store_true", default=False)
+        parser.add_argument("-N", "--no-gui", action="store_true", default=False)
 
-        (options, args) = parser.parse_args()
-        if len(args) != 0:
-            parser.print_help()
-            sys.exit(1)
-
-        if options.freq < 1e6:
-            options.freq *= 1e6
+        args = parser.parse_args()
+        if args.freq < 1e6:
+            args.freq *= 1e6
 
         self.frame = frame
         self.panel = panel
@@ -72,18 +68,18 @@ class my_top_block (stdgui2.std_top_block):
         self.freq = 0
         self.freq_step = 25e3
 
-        self.rxpath = receive_path(options.args, options.spec, options.antenna,
-                                   options.gain, options.audio_output)
+        self.rxpath = receive_path(args.args, args.spec, args.antenna,
+                                   args.gain, args.audio_output)
 	self.connect(self.rxpath)
 
-        self._build_gui(vbox, options.no_gui)
+        self._build_gui(vbox, args.no_gui)
 
         # set initial values
 
-        if options.volume is not None:
-            self.set_volume(options.volume)
+        if args.volume is not None:
+            self.set_volume(args.volume)
 
-        if not(self.set_freq(options.freq)):
+        if not(self.set_freq(args.freq)):
             self._set_status_msg("Failed to set initial frequency")
 
         self.set_gain(self.rxpath.gain)               # update gui
