@@ -23,13 +23,13 @@
 import math
 import sys
 import wx
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from gnuradio import gr, audio, uhd
 from gnuradio import analog
 from gnuradio import blocks
 from gnuradio import filter
-from gnuradio.eng_option import eng_option
+from gnuradio.eng_arg import eng_float, intx
 from gnuradio.wxgui import stdgui2, fftsink2, scopesink2, slider, form
 
 from numpy import convolve, array
@@ -49,46 +49,42 @@ class ptt_block(stdgui2.std_top_block):
         self.frame = frame
         self.space_bar_pressed = False
 
-        parser = OptionParser (option_class=eng_option)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser = ArgumentParser()
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
 	                  help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option ("-f", "--freq", type="eng_float", default=442.1e6,
+        parser.add_argument ("-f", "--freq", type=eng_float, default=442.1e6,
                            help="set Tx and Rx frequency to FREQ", metavar="FREQ")
-        parser.add_option ("-g", "--rx-gain", type="eng_float", default=None,
+        parser.add_argument ("-g", "--rx-gain", type=eng_float, default=None,
                            help="set rx gain [default=midpoint in dB]")
-        parser.add_option ("", "--tx-gain", type="eng_float", default=None,
+        parser.add_argument ("", "--tx-gain", type=eng_float, default=None,
                            help="set tx gain [default=midpoint in dB]")
-        parser.add_option("-I", "--audio-input", type="string", default="default",
+        parser.add_argument("-I", "--audio-input", default="default",
                           help="pcm input device name.  E.g., hw:0,0 or /dev/dsp")
-        parser.add_option("-O", "--audio-output", type="string", default="default",
+        parser.add_argument("-O", "--audio-output", default="default",
                           help="pcm output device name.  E.g., hw:0,0 or /dev/dsp")
-        parser.add_option ("-N", "--no-gui", action="store_true", default=False)
-        (options, args) = parser.parse_args ()
+        parser.add_argument ("-N", "--no-gui", action="store_true", default=False)
+        args = parser.parse_args()
 
-        if len(args) != 0:
-            parser.print_help()
-            sys.exit(1)
+        if args.freq < 1e6:
+            args.freq *= 1e6
 
-        if options.freq < 1e6:
-            options.freq *= 1e6
-
-        self.txpath = transmit_path(options.args, options.spec,
-                                    options.antenna, options.tx_gain,
-                                    options.audio_input)
-        self.rxpath = receive_path(options.args, options.spec,
-                                   options.antenna, options.rx_gain,
-                                   options.audio_output)
+        self.txpath = transmit_path(args.args, args.spec,
+                                    args.antenna, args.tx_gain,
+                                    args.audio_input)
+        self.rxpath = receive_path(args.args, args.spec,
+                                   args.antenna, args.rx_gain,
+                                   args.audio_output)
 	self.connect(self.txpath)
 	self.connect(self.rxpath)
 
-        self._build_gui(frame, panel, vbox, argv, options.no_gui)
+        self._build_gui(frame, panel, vbox, argv, args.no_gui)
 
         self.set_transmit(False)
-        self.set_freq(options.freq)
+        self.set_freq(args.freq)
         self.set_rx_gain(self.rxpath.gain)               # update gui
         self.set_volume(self.rxpath.volume)              # update gui
         self.set_squelch(self.rxpath.threshold())        # update gui
