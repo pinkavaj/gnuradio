@@ -20,10 +20,12 @@
 # Boston, MA 02110-1301, USA.
 # 
 
+from argparse import ArgumentError
 from gnuradio import gr, gru, filter
 from gnuradio import eng_notation
 from gnuradio import digital
 from gnuradio import analog
+from gnuradio.eng_arg import eng_float
 
 import copy
 import sys
@@ -49,7 +51,7 @@ class receive_path(gr.hier_block2):
         self._chbw_factor = options.chbw_factor # channel filter bandwidth factor
 
         # Get demod_kwargs
-        demod_kwargs = self._demod_class.extract_kwargs_from_options(options)
+        demod_kwargs = self._demod_class.extract_kwargs_from_args(options)
 
         # Build the demodulator
         self.demodulator = self._demod_class(**demod_kwargs)
@@ -126,20 +128,22 @@ class receive_path(gr.hier_block2):
         self.probe.set_threshold(threshold_in_db)
 
     @staticmethod
-    def add_options(normal, expert):
+    def add_arguments(normal, expert):
         """
-        Adds receiver-specific options to the Options Parser
+        Adds receiver-specific args to the ArgumentParser
         """
-        if not normal.has_option("--bitrate"):
-            normal.add_option("-r", "--bitrate", type="eng_float", default=100e3,
-                              help="specify bitrate [default=%default].")
-        normal.add_option("-v", "--verbose", action="store_true", default=False)
-        expert.add_option("-S", "--samples-per-symbol", type="float", default=2,
-                          help="set samples/symbol [default=%default]")
-        expert.add_option("", "--log", action="store_true", default=False,
+        try:
+            normal.add_argument("-r", "--bitrate", type=eng_float, default=100e3,
+                              help="specify bitrate [default=%(default)r].")
+        except ArgumentError:
+            pass
+        normal.add_argument("-v", "--verbose", action="store_true", default=False)
+        expert.add_argument("-S", "--samples-per-symbol", type=float, default=2,
+                          help="set samples/symbol [default=%(default)r]")
+        expert.add_argument("--log", action="store_true", default=False,
                           help="Log all parts of flow graph to files (CAUTION: lots of data)")
-        expert.add_option("", "--chbw-factor", type="float", default=1.0,
-                          help="Channel bandwidth = chbw_factor x signal bandwidth [defaut=%default]")
+        expert.add_argument("--chbw-factor", type=float, default=1.0,
+                          help="Channel bandwidth = chbw_factor x signal bandwidth [defaut=%(default)r]")
 
     def _print_verbage(self):
         """
