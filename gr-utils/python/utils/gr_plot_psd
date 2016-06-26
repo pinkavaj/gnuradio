@@ -27,7 +27,7 @@ from gnuradio.plot_psd_base import plot_psd_base
 
 def main():
     parser = plot_psd_base.setup_options()
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
     if len(args) != 1:
         parser.print_help()
         raise SystemExit, 1
