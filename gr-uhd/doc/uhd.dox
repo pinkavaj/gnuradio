@@ -123,18 +123,18 @@ In general, the dictionary should be preferred. It has some distinct advantages:
 A typical option parser setup for a UHD device looks like
 
 \code
-    parser = OptionParser(option_class=eng_option)
-    parser.add_option("-a", "--args", type="string", default="",
+    parser = ArgumentParser()
+    parser.add_option("-a", "--args", default="",
                       help="UHD device address args , [default=%default]")
-    parser.add_option("", "--spec", type="string", default=None,
+    parser.add_option("", "--spec", default=None,
                       help="Subdevice of UHD device where appropriate")
-    parser.add_option("-A", "--antenna", type="string", default=None,
+    parser.add_option("-A", "--antenna", default=None,
                       help="select Rx Antenna where appropriate")
-    parser.add_option("-s", "--samp-rate", type="eng_float", default=1e6,
+    parser.add_option("-s", "--samp-rate", type=eng_float, default=1e6,
                       help="set sample rate (bandwidth) [default=%default]")
-    parser.add_option("-f", "--freq", type="eng_float", default=None,
+    parser.add_option("-f", "--freq", type=eng_float, default=None,
                       help="set frequency to FREQ", metavar="FREQ")
-    parser.add_option("-g", "--gain", type="eng_float", default=None,
+    parser.add_option("-g", "--gain", type=eng_float, default=None,
                       help="set gain in dB (default is midpoint)")
 \endcode
 
