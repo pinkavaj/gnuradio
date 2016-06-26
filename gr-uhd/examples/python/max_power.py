@@ -29,8 +29,8 @@ from gnuradio import gr
 from gnuradio import analog
 from gnuradio import blocks
 from gnuradio import uhd
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 from gnuradio import eng_notation
 
@@ -123,16 +123,16 @@ class build_block(gr.top_block):
             self.connect (self.u_rx, self.rx_dst0)
 
 def main ():
-    parser = OptionParser (option_class=eng_option)
-    parser.add_option("-a", "--args", type="string", default="",
+    parser = ArgumentParser()
+    parser.add_argument("-a", "--args", default="",
                       help="UHD device address args [default=%default]")
-    parser.add_option("-t", action="store_true", dest="tx_enable",
+    parser.add_argument("-t", action="store_true", dest="tx_enable",
                       default=False, help="enable Tx path")
-    parser.add_option("-r", action="store_true", dest="rx_enable",
+    parser.add_argument("-r", action="store_true", dest="rx_enable",
                       default=False, help="enable Rx path")
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
-    tb = build_block (options.args, options.tx_enable, options.rx_enable)
+    tb = build_block (args.args, args.tx_enable, args.rx_enable)
 
     tb.start ()
     raw_input ('Press Enter to quit: ')
