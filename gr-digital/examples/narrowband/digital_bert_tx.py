@@ -21,8 +21,8 @@
 #
 
 from gnuradio import gr, eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import sys
 
 from gnuradio import blocks
@@ -68,70 +68,66 @@ class tx_psk_block(gr.top_block):
         # transmitter
 	self._modulator = self._modulator_class(**mod_kwargs)
 
-        if(options.tx_freq is not None):
-            symbol_rate = options.bitrate / self._modulator.bits_per_symbol()
-            self._sink = uhd_transmitter(options.args, symbol_rate,
-                                         options.samples_per_symbol,
-                                         options.tx_freq, options.tx_gain,
-                                         options.spec,
-                                         options.antenna, options.verbose)
-            options.samples_per_symbol = self._sink._sps
+        if(args.tx_freq is not None):
+            symbol_rate = args.bitrate / self._modulator.bits_per_symbol()
+            self._sink = uhd_transmitter(args.args, symbol_rate,
+                                         args.samples_per_symbol,
+                                         args.tx_freq, args.tx_gain,
+                                         args.spec,
+                                         args.antenna, args.verbose)
+            args.samples_per_symbol = self._sink._sps
             
-        elif(options.to_file is not None):
-            self._sink = blocks.file_sink(gr.sizeof_gr_complex, options.to_file)
+        elif(args.to_file is not None):
+            self._sink = blocks.file_sink(gr.sizeof_gr_complex, args.to_file)
         else:
             self._sink = blocks.null_sink(gr.sizeof_gr_complex)
             
             
         self._transmitter = bert_transmit(self._modulator._constellation,
-                                          options.samples_per_symbol,
-                                          options.differential,
-                                          options.excess_bw,
+                                          args.samples_per_symbol,
+                                          args.differential,
+                                          args.excess_bw,
                                           gray_coded=True,
-                                          verbose=options.verbose,
-                                          log=options.log)
+                                          verbose=args.verbose,
+                                          log=args.log)
 
-        self.amp = blocks.multiply_const_cc(options.amplitude)
+        self.amp = blocks.multiply_const_cc(args.amplitude)
 	self.connect(self._transmitter, self.amp, self._sink)
 
 
 def get_options(mods):
-    parser = OptionParser(option_class=eng_option, conflict_handler="resolve")
-    parser.add_option("-m", "--modulation", type="choice", choices=mods.keys(),
+    parser = ArgumentParser(conflict_handler="resolve")
+    parser.add_argument("-m", "--modulation", choices=mods.keys(),
                       default='psk',
-                      help="Select modulation from: %s [default=%%default]"
+                      help="Select modulation from: %s [default=%%(default)r]"
                             % (', '.join(mods.keys()),))
-    parser.add_option("", "--amplitude", type="eng_float", default=0.2,
-                      help="set Tx amplitude (0-1) (default=%default)")
-    parser.add_option("-r", "--bitrate", type="eng_float", default=250e3,
-                      help="Select modulation bit rate (default=%default)")
-    parser.add_option("-S", "--samples-per-symbol", type="float", default=2,
-                      help="set samples/symbol [default=%default]")
-    parser.add_option("","--to-file", default=None,
+    parser.add_argument("--amplitude", type=eng_float, default=0.2,
+                      help="set Tx amplitude (0-1) (default=%(default)r)")
+    parser.add_argument("-r", "--bitrate", type=eng_float, default=250e3,
+                      help="Select modulation bit rate (default=%(default)r)")
+    parser.add_argument("-S", "--samples-per-symbol", type=float, default=2,
+                      help="set samples/symbol [default=%(default)r]")
+    parser.add_argument("--to-file",
                       help="Output file for modulated samples")
     if not parser.has_option("--verbose"):
-        parser.add_option("-v", "--verbose", action="store_true", default=False)
+        parser.add_argument("-v", "--verbose", action="store_true")
     if not parser.has_option("--log"):
-        parser.add_option("", "--log", action="store_true", default=False)
+        parser.add_argument("--log", action="store_true")
 
-    uhd_transmitter.add_options(parser)
+    uhd_transmitter.add_arguments(parser)
 
     for mod in mods.values():
-        mod.add_options(parser)
+        mod.add_arguments(parser)
 		      
-    (options, args) = parser.parse_args()
-    if len(args) != 0:
-        parser.print_help()
-        sys.exit(1)
-	
-    return (options, args)
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
     mods = digital.modulation_utils.type_1_mods()
 
-    (options, args) = get_options(mods)
+    args = get_options(mods)
     
-    mod = mods[options.modulation]
+    mod = mods[args.modulation]
     tb = tx_psk_block(mod, options)
 
     try:
