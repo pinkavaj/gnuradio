@@ -7,8 +7,8 @@ import math
 import sys
 import random
 from gnuradio.trellis import fsm_utils
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import numpy
 
 try:
@@ -65,19 +65,15 @@ def run_test (f,Kb,bitspersymbol,K,dimensionality,constellation,N0,seed):
 
 
 def main():
-    parser = OptionParser(option_class=eng_option)
-    parser.add_option("-f", "--fsm_file", type="string", default="fsm_files/awgn1o2_4.fsm", help="Filename containing the fsm specification, e.g. -f fsm_files/awgn1o2_4.fsm (default=fsm_files/awgn1o2_4.fsm)")
-    parser.add_option("-e", "--esn0", type="eng_float", default=10.0, help="Symbol energy to noise PSD level ratio in dB, e.g., -e 10.0 (default=10.0)")
-    parser.add_option("-r", "--repetitions", type="int", default=100, help="Number of packets to be generated for the simulation, e.g., -r 100 (default=100)")
+    parser = ArgumentParser()
+    parser.add_argument("-f", "--fsm_file", default="fsm_files/awgn1o2_4.fsm", help="Filename containing the fsm specification, e.g. -f fsm_files/awgn1o2_4.fsm (default=fsm_files/awgn1o2_4.fsm)")
+    parser.add_argument("-e", "--esn0", type=eng_float, default=10.0, help="Symbol energy to noise PSD level ratio in dB, e.g., -e 10.0 (default=10.0)")
+    parser.add_argument("-r", "--repetitions", type=int, default=100, help="Number of packets to be generated for the simulation, e.g., -r 100 (default=100)")
 
-    (options, args) = parser.parse_args ()
-    if len(args) != 0:
-        parser.print_help()
-        raise SystemExit, 1
-
-    fname=options.fsm_file
-    esn0_db=float(options.esn0)
-    rep=int(options.repetitions)
+    args = parser.parse_args()
+    fname=args.fsm_file
+    esn0_db=float(args.esn0)
+    rep=int(args.repetitions)
 
     # system parameters
     f=trellis.fsm(fname) # get the FSM specification from a file
