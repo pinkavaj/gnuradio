@@ -22,8 +22,8 @@
 ###############################################################################
 # Imports
 ###############################################################################
-from optparse import OptionParser
-from gnuradio.eng_option import eng_option
+from argparse import ArgumentParser
+from gnuradio.eng_arg import eng_float, intx
 import gui
 import sys
 import os
@@ -44,10 +44,10 @@ class gui(QtGui.QMainWindow):
         self.update_timer = Qt.QTimer()
 
         # socket addresses
-        rpc_adr_server = "tcp://"+options.servername+":6666"
-        rpc_adr_client = "tcp://"+options.clientname+":6667"
-        probe_adr_server = "tcp://"+options.servername+":5556"
-        probe_adr_client = "tcp://"+options.clientname+":5557"
+        rpc_adr_server = "tcp://"+args.servername+":6666"
+        rpc_adr_client = "tcp://"+args.clientname+":6667"
+        probe_adr_server = "tcp://"+args.servername+":5556"
+        probe_adr_client = "tcp://"+args.clientname+":5557"
 
         # ZeroMQ
         self.probe_manager = zeromq.probe_manager()
@@ -143,12 +143,12 @@ class gui(QtGui.QMainWindow):
 ###############################################################################
 def parse_options():
     """ Options parser. """
-    parser = OptionParser(option_class=eng_option, usage="%prog: [options]")
-    parser.add_option("-s", "--servername", type="string", default="localhost",
+    parser = ArgumentParser(usage="%prog: [options]")
+    parser.add_argument("-s", "--servername", default="localhost",
                       help="Server hostname")
-    parser.add_option("-c", "--clientname", type="string", default="localhost",
+    parser.add_argument("-c", "--clientname", default="localhost",
                       help="Server hostname")
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
     return options
 
 
