@@ -38,8 +38,8 @@ except ImportError:
 from gnuradio import gr, digital, filter
 from gnuradio import blocks
 from gnuradio import channels
-from optparse import OptionParser
-from gnuradio.eng_option import eng_option
+from argparse import ArgumentParser
+from gnuradio.eng_arg import eng_float, intx
 
 '''
 This example program uses Python and GNU Radio to calculate SNR of a
@@ -116,22 +116,22 @@ def main():
                      "svr": snr_est_svr}
 
 
-    parser = OptionParser(option_class=eng_option, conflict_handler="resolve")
-    parser.add_option("-N", "--nsamples", type="int", default=10000,
+    parser = ArgumentParser(conflict_handler="resolve")
+    parser.add_argument("-N", "--nsamples", type=int, default=10000,
                       help="Set the number of samples to process [default=%default]")
-    parser.add_option("", "--snr-min", type="float", default=-5,
+    parser.add_argument("", "--snr-min", type=float, default=-5,
                       help="Minimum SNR [default=%default]")
-    parser.add_option("", "--snr-max", type="float", default=20,
+    parser.add_argument("", "--snr-max", type=float, default=20,
                       help="Maximum SNR [default=%default]")
-    parser.add_option("", "--snr-step", type="float", default=0.5,
+    parser.add_argument("", "--snr-step", type=float, default=0.5,
                       help="SNR step amount [default=%default]")
-    parser.add_option("-t", "--type", type="choice",
+    parser.add_argument("-t", "--type", type="choice",
                       choices=gr_estimators.keys(), default="simple",
                       help="Estimator type {0} [default=%default]".format(
                             gr_estimators.keys()))
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
-    N = options.nsamples
+    N = args.nsamples
     xx = scipy.random.randn(N)
     xy = scipy.random.randn(N)
     bits =2*scipy.complex64(scipy.random.randint(0, 2, N)) - 1
@@ -147,12 +147,12 @@ def main():
 
     n_cpx = xx + 1j*xy
 
-    py_est = py_estimators[options.type]
-    gr_est = gr_estimators[options.type]
+    py_est = py_estimators[args.type]
+    gr_est = gr_estimators[args.type]
 
-    SNR_min = options.snr_min
-    SNR_max = options.snr_max
-    SNR_step = options.snr_step
+    SNR_min = args.snr_min
+    SNR_max = args.snr_max
+    SNR_step = args.snr_step
     SNR_dB = scipy.arange(SNR_min, SNR_max+SNR_step, SNR_step)
     for snr in SNR_dB:
         SNR = 10.0**(snr/10.0)
