@@ -192,7 +192,7 @@ class Param(Element):
             opt_keys = self.get_options()[0].get_opt_keys()
             for option in self.get_options():
                 if set(opt_keys) != set(option.get_opt_keys()):
-                    raise Exception('Opt keys "{}" are not identical across all options.'.format(opt_keys))
+                    raise Exception('Opt keys "{}" are not identical across all args.'.format(opt_keys))
             # If a value is specified, it must be in the options keys
             if value or value in self.get_option_keys():
                 self._value = value
