@@ -2,7 +2,7 @@
 
 import sys
 import os, os.path
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 def quote_line (line):
     line = line.replace ('&', '&amp;')
