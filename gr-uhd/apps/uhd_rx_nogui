@@ -24,8 +24,8 @@ from gnuradio import gr, gru, uhd, audio
 from gnuradio import filter
 from gnuradio import analog
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import sys
 
 """
@@ -204,39 +204,39 @@ class app_top_block(gr.top_block):
 
 
 def main():
-    parser = OptionParser(option_class=eng_option)
-    parser.add_option("-a", "--args", type="string", default="",
+    parser = ArgumentParser()
+    parser.add_option("-a", "--args", default="",
                       help="UHD device address args , [default=%default]")
-    parser.add_option("", "--spec", type="string", default=None,
+    parser.add_option("", "--spec", default=None,
                       help="Subdevice of UHD device where appropriate")
-    parser.add_option("-A", "--antenna", type="string", default=None,
+    parser.add_option("-A", "--antenna", default=None,
                       help="select Rx Antenna where appropriate [default=%default]")
-    parser.add_option("-f", "--frequency", type="eng_float",
+    parser.add_option("-f", "--frequency", type=eng_float,
                       default=None, metavar="Hz",
                       help="set receive frequency to Hz [default=%default]")
-    parser.add_option("-c",   "--calibration", type="eng_float",
+    parser.add_option("-c",   "--calibration", type=eng_float,
                       default=0.0, metavar="Hz",
                       help="set frequency offset to Hz [default=%default]")
-    parser.add_option("-g", "--gain", type="eng_float",
+    parser.add_option("-g", "--gain", type=eng_float,
                       metavar="dB", default=None,
                       help="set RF gain [default is midpoint]")
     parser.add_option("-m", "--modulation", type="choice", choices=('AM','FM','WFM'),
                       metavar="TYPE", default=None,
                       help="set modulation type (AM,FM,WFM) [default=%default]")
-    parser.add_option("-o", "--output-rate", type="eng_float",
+    parser.add_option("-o", "--output-rate", type=eng_float,
                       default=32000, metavar="RATE",
                       help="set audio output rate to RATE [default=%default]")
-    parser.add_option("-r", "--rf-squelch", type="eng_float",
+    parser.add_option("-r", "--rf-squelch", type=eng_float,
                       default=-50.0, metavar="dB",
                       help="set RF squelch to dB [default=%default]")
-    parser.add_option("-p", "--ctcss", type="float",
+    parser.add_option("-p", "--ctcss", type=float,
                       default=None, metavar="FREQ",
 		      help="set CTCSS squelch to FREQ [default=%default]")
-    parser.add_option("-O", "--audio-output", type="string", default="default",
+    parser.add_option("-O", "--audio-output", default="default",
                       help="pcm device name.  E.g., hw:0,0 or surround51 or /dev/dsp")
     parser.add_option("", "--show-async-msg", action="store_true", default=False,
                       help="Show asynchronous message notifications from UHD [default=%default]")
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
     if options.frequency is None:
 	sys.stderr.write("Must supply receive frequency with -f.\n")
