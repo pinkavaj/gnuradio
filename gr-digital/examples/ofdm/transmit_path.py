@@ -43,8 +43,8 @@ class transmit_path(gr.hier_block2):
 
         options = copy.copy(options)    # make a copy so we can destructively modify
 
-        self._verbose      = options.verbose      # turn verbose mode on/off
-        self._tx_amplitude = options.tx_amplitude # digital amp sent to radio
+        self._verbose      = args.verbose      # turn verbose mode on/off
+        self._tx_amplitude = args.tx_amplitude # digital amp sent to radio
 
         self.ofdm_tx = digital.ofdm_mod(options,
                                         msgq_limit=4,
@@ -77,20 +77,18 @@ class transmit_path(gr.hier_block2):
         return self.ofdm_tx.send_pkt(payload, eof)
 
     @staticmethod
-    def add_options(normal, expert):
+    def add_arguments(normal, expert):
         """
         Adds transmitter-specific options to the Options Parser
         """
-        normal.add_option("", "--tx-amplitude", type="eng_float",
+        normal.add_argument("--tx-amplitude", type=eng_float,
                           default=0.1, metavar="AMPL",
-                          help="set transmitter digital amplitude: 0 <= AMPL < 1.0 [default=%default]")
-        normal.add_option("-W", "--bandwidth", type="eng_float",
+                          help="set transmitter digital amplitude: 0 <= AMPL < 1.0 [default=%(default)r]")
+        normal.add_argument("-W", "--bandwidth", type=eng_float,
                           default=500e3,
-                          help="set symbol bandwidth [default=%default]")
-        normal.add_option("-v", "--verbose", action="store_true",
-                          default=False)
-        expert.add_option("", "--log", action="store_true",
-                          default=False,
+                          help="set symbol bandwidth [default=%(default)r]")
+        normal.add_argument("-v", "--verbose", action="store_true")
+        expert.add_argument("--log", action="store_true",
                           help="Log all parts of flow graph to file (CAUTION: lots of data)")
 
     def _print_verbage(self):
@@ -98,4 +96,4 @@ class transmit_path(gr.hier_block2):
         Prints information about the transmit path
         """
         print "Tx amplitude     %s" % (self._tx_amplitude)
-        
+
