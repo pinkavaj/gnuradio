@@ -26,7 +26,7 @@ Generic modulation and demodulation.
 """
 
 from gnuradio import gr
-from modulation_utils import extract_kwargs_from_options_for_class
+from modulation_utils import extract_kwargs_from_args_for_class
 from utils import mod_codes
 import digital_swig as digital
 import math
@@ -46,7 +46,7 @@ try:
 except ImportError:
     import analog_swig as analog
 
-# default values (used in __init__ and add_options)
+# default values (used in __init__ and add_arguments)
 _def_samples_per_symbol = 2
 _def_excess_bw = 0.35
 _def_verbose = False
@@ -64,24 +64,24 @@ _def_constellation_points = 16
 # Whether differential coding is used.
 _def_differential = False
 
-def add_common_options(parser):
+def add_common_arguments(parser):
     """
     Sets options common to both modulator and demodulator.
     """
-    parser.add_option("-p", "--constellation-points", type="int", default=_def_constellation_points,
-                      help="set the number of constellation points (must be a power of 2 for psk, power of 4 for QAM) [default=%default]")
-    parser.add_option("", "--non-differential", action="store_false",
+    parser.add_argument("-p", "--constellation-points", type=int, default=_def_constellation_points,
+                      help="set the number of constellation points (must be a power of 2 for psk, power of 4 for QAM) [default=%(default)r]")
+    parser.add_argument("--non-differential", action="store_false",
                       dest="differential",
                       help="do not use differential encoding [default=False]")
-    parser.add_option("", "--differential", action="store_true",
+    parser.add_argument("--differential", action="store_true",
                       dest="differential", default=True,
-                      help="use differential encoding [default=%default]")
-    parser.add_option("", "--mod-code", type="choice", choices=mod_codes.codes,
+                      help="use differential encoding [default=%(default)r]")
+    parser.add_argument("--mod-code", type="choice", choices=mod_codes.codes,
                       default=mod_codes.NO_CODE,
-                      help="Select modulation code from: %s [default=%%default]"
+                      help="Select modulation code from: %s [default=%%(default)r]"
                             % (', '.join(mod_codes.codes),))
-    parser.add_option("", "--excess-bw", type="float", default=_def_excess_bw,
-                      help="set RRC excess bandwith factor [default=%default]")
+    parser.add_argument("--excess-bw", type=float, default=_def_excess_bw,
+                      help="set RRC excess bandwith factor [default=%(default)r]")
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -176,17 +176,17 @@ class generic_mod(gr.hier_block2):
         return self._constellation.bits_per_symbol()
 
     @staticmethod
-    def add_options(parser):
+    def add_arguments(parser):
         """
         Adds generic modulation options to the standard parser
         """
-        add_common_options(parser)
+        add_common_arguments(parser)
 
     def extract_kwargs_from_options(cls, options):
         """
         Given command line options, create dictionary suitable for passing to __init__
         """
-        return extract_kwargs_from_options_for_class(cls, options)
+        return extract_kwargs_from_args_for_class(cls, options)
     extract_kwargs_from_options=classmethod(extract_kwargs_from_options)
 
 
@@ -373,25 +373,25 @@ class generic_demod(gr.hier_block2):
                      blocks.file_sink(gr.sizeof_char, "rx_unpack.8b"))
 
     @staticmethod
-    def add_options(parser):
+    def add_arguments(parser):
         """
         Adds generic demodulation options to the standard parser
         """
         # Add options shared with modulator.
-        add_common_options(parser)
+        add_common_arguments(parser)
         # Add options specific to demodulator.
-        parser.add_option("", "--freq-bw", type="float", default=_def_freq_bw,
-                          help="set frequency lock loop lock-in bandwidth [default=%default]")
-        parser.add_option("", "--phase-bw", type="float", default=_def_phase_bw,
-                          help="set phase tracking loop lock-in bandwidth [default=%default]")
-        parser.add_option("", "--timing-bw", type="float", default=_def_timing_bw,
-                          help="set timing symbol sync loop gain lock-in bandwidth [default=%default]")
+        parser.add_argument("--freq-bw", type=float, default=_def_freq_bw,
+                          help="set frequency lock loop lock-in bandwidth [default=%(default)r]")
+        parser.add_argument("", "--phase-bw", type=float, default=_def_phase_bw,
+                          help="set phase tracking loop lock-in bandwidth [default=%(default)r]")
+        parser.add_argument("", "--timing-bw", type=float, default=_def_timing_bw,
+                          help="set timing symbol sync loop gain lock-in bandwidth [default=%(default)r]")
 
     def extract_kwargs_from_options(cls, options):
         """
         Given command line options, create dictionary suitable for passing to __init__
         """
-        return extract_kwargs_from_options_for_class(cls, options)
+        return extract_kwargs_from_args_for_class(cls, options)
     extract_kwargs_from_options=classmethod(extract_kwargs_from_options)
 
 shared_demod_args = """    samples_per_symbol: samples per baud >= 2 (float)
