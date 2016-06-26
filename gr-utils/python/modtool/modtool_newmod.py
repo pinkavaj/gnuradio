@@ -23,7 +23,7 @@
 import shutil
 import os
 import re
-from optparse import OptionGroup
+from argparse import OptionGroup
 from gnuradio import gr
 from modtool_base import ModTool, ModToolException
 from scm import SCMRepoFactory
@@ -38,11 +38,9 @@ class ModToolNewModule(ModTool):
     def setup_parser(self):
         " Initialise the option parser for 'gr_modtool newmod' "
         parser = ModTool.setup_parser(self)
-        parser.usage = '%prog nm [options]. \n Call %prog without any options to run it interactively.'
-        ogroup = OptionGroup(parser, "New out-of-tree module options")
-        ogroup.add_option("--srcdir", type="string",
+        args_group = parser.add_argument_group("New out-of-tree module options")
+        args_group.add_option("--srcdir",
                 help="Source directory for the module template.")
-        parser.add_option_group(ogroup)
         return parser
 
     def setup(self, options, args):
