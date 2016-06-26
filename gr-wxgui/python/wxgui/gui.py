@@ -28,7 +28,7 @@ from gnuradio import gr
 # that gets invoked with needed parameters.
 #
 class top_panel(wx.Panel):
-    def __init__(self, frame, top_block, gui, options, args):
+    def __init__(self, frame, top_block, gui, args):
         wx.Panel.__init__(self, frame, -1)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
@@ -62,7 +62,7 @@ class top_panel(wx.Panel):
 # Top-level window frame with menu and status bars.
 #
 class top_frame(wx.Frame):
-    def __init__ (self, top_block, gui, options, args,
+    def __init__ (self, top_block, gui, args,
                   title, nstatus, start, realtime):
 
         wx.Frame.__init__(self, None, -1, title)
@@ -80,7 +80,7 @@ class top_frame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
         # Create main panel, creates user GUI class with supplied parameters
-        self.panel = top_panel(self, top_block, gui, options, args)
+        self.panel = top_panel(self, top_block, gui, args)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.panel, 1, wx.EXPAND)
