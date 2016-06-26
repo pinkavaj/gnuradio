@@ -26,9 +26,9 @@ import sys
 # None of these must depend on other modtool stuff!
 
 def get_command_from_argv(possible_cmds):
-    """ Read the requested command from argv. This can't be done with optparse,
+    """ Read the requested command from argv. This can't be done with argparse,
     since the option parser isn't defined before the command is known, and
-    optparse throws an error."""
+    argparse throws an error."""
     for arg in sys.argv:
         if arg[0] != "-" and arg in possible_cmds:
             return arg
