@@ -74,9 +74,9 @@ from gnuradio import gr, audio, eng_notation
 from gnuradio import analog
 from gnuradio import filter
 from gnuradio import blocks
-from gnuradio.eng_option import eng_option
+from gnuradio.eng_arg import eng_float, intx
 from gnuradio import uhd
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 n2s = eng_notation.num_to_str
 
@@ -156,34 +156,34 @@ class MyFrame(wx.Frame):
         self.__do_layout()
         # end wxGlade
 
-        parser = OptionParser (option_class=eng_option)
-        parser.add_option("", "--args", type="string", default="addr=''",
+        parser = ArgumentParser()
+        parser.add_argument("", "--args", default="addr=''",
                           help="Arguments for UHD device, [default=%default]")
-        parser.add_option("", "--spec", type="string", default="A:0",
+        parser.add_argument("", "--spec", default="A:0",
                           help="UHD device subdev spec, [default=%default]")
-        parser.add_option ("-c", "--ddc-freq", type="eng_float", default=3.9e6,
+        parser.add_argument ("-c", "--ddc-freq", type=eng_float, default=3.9e6,
                            help="set Rx DDC frequency to FREQ", metavar="FREQ")
-        parser.add_option ("-s", "--samp-rate", type="eng_float", default=256000,
+        parser.add_argument ("-s", "--samp-rate", type=eng_float, default=256000,
                            help="set sample rate (bandwidth) [default=%default]")
-        parser.add_option ("-a", "--audio_file", default="",
+        parser.add_argument ("-a", "--audio_file", default="",
                            help="audio output file", metavar="FILE")
-        parser.add_option ("-r", "--radio_file", default="",
+        parser.add_argument ("-r", "--radio_file", default="",
                            help="radio output file", metavar="FILE")
-        parser.add_option ("-i", "--input_file", default="",
+        parser.add_argument ("-i", "--input_file", default="",
                            help="radio input file", metavar="FILE")
-        parser.add_option ("-O", "--audio-output", type="string", default="",
+        parser.add_argument ("-O", "--audio-output", default="",
                            help="audio output device name. E.g., hw:0,0, /dev/dsp, or pulse")
-        parser.add_option ("", "--audio-rate", type="int", default=32000,
+        parser.add_argument ("", "--audio-rate", type=int, default=32000,
                            help="audio output sample rate [default=%default]")
 
-        (options, args) = parser.parse_args ()
+        args = parser.parse_args()
 
-        self.usrp_center = options.ddc_freq
-        self.input_rate = input_rate = options.samp_rate
+        self.usrp_center = args.ddc_freq
+        self.input_rate = input_rate = args.samp_rate
         self.slider_range = input_rate * 0.9375
         self.f_lo = self.usrp_center - (self.slider_range/2)
         self.f_hi = self.usrp_center + (self.slider_range/2)
-        self.af_sample_rate = options.audio_rate
+        self.af_sample_rate = args.audio_rate
         self.tb = gr.top_block()
 
         # radio variables, initial conditions
@@ -212,17 +212,17 @@ class MyFrame(wx.Frame):
           self.active_button = 7
 
         # command line options
-        if options.audio_file == "": SAVE_AUDIO_TO_FILE = False
+        if args.audio_file == "": SAVE_AUDIO_TO_FILE = False
         else: SAVE_AUDIO_TO_FILE = True
-        if options.radio_file == "": SAVE_RADIO_TO_FILE = False
+        if args.radio_file == "": SAVE_RADIO_TO_FILE = False
         else: SAVE_RADIO_TO_FILE = True
-        if options.input_file == "": self.PLAY_FROM_USRP = True
+        if args.input_file == "": self.PLAY_FROM_USRP = True
         else: self.PLAY_FROM_USRP = False
 
         if self.PLAY_FROM_USRP:
-            self.src = uhd.usrp_source(options.args, stream_args=uhd.stream_args('fc32'))
+            self.src = uhd.usrp_source(args.args, stream_args=uhd.stream_args('fc32'))
             self.src.set_samp_rate(input_rate)
-            self.src.set_subdev_spec(options.spec)
+            self.src.set_subdev_spec(args.spec)
             self.input_rate = input_rate = self.src.get_samp_rate()
 
             self.src.set_center_freq(self.usrp_center, 0)
@@ -239,7 +239,7 @@ class MyFrame(wx.Frame):
             print "Request Rate at Audio Sink: ", self.af_sample_rate
 
         else:
-            self.src = blocks.file_source (gr.sizeof_short,options.input_file)
+            self.src = blocks.file_source (gr.sizeof_short,args.input_file)
             self.tune_offset = 2200 # 2200 works for 3.5-4Mhz band
 
             # convert rf data in interleaved short int form to complex
@@ -263,7 +263,7 @@ class MyFrame(wx.Frame):
 
         # save radio data to a file
         if SAVE_RADIO_TO_FILE:
-           radio_file = blocks.file_sink(gr.sizeof_short, options.radio_file)
+           radio_file = blocks.file_sink(gr.sizeof_short, args.radio_file)
            self.tb.connect (self.src, radio_file)
 
         # 2nd DDC
@@ -333,7 +333,7 @@ class MyFrame(wx.Frame):
 
         self.scale = blocks.multiply_const_ff(0.00001)
         dst = audio.sink(long(self.af_sample_rate),
-                         options.audio_output)
+                         args.audio_output)
 
 
         if self.PLAY_FROM_USRP:
@@ -361,7 +361,7 @@ class MyFrame(wx.Frame):
         self.tb.connect(c2f3, dst)
 
         if SAVE_AUDIO_TO_FILE:
-            f_out = blocks.file_sink(gr.sizeof_short,options.audio_file)
+            f_out = blocks.file_sink(gr.sizeof_short,args.audio_file)
             sc1 = blocks.multiply_const_ff(64000)
             f2s1 = blocks.float_to_short()
             self.tb.connect(agc,sc1,f2s1,f_out)
