@@ -53,8 +53,8 @@ from gnuradio import gr, gru, uhd, eng_notation, eng_arg
 from gnuradio import analog
 from gnuradio import blocks
 from gnuradio.gr.pubsub import pubsub
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 n2s = eng_notation.num_to_str
 
