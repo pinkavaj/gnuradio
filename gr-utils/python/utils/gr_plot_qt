@@ -34,7 +34,7 @@ except ImportError:
     raise SystemExit, 1
 
 import sys, os
-from optparse import OptionParser
+from argparse import ArgumentParser
 from gnuradio import eng_notation
 
 
@@ -697,23 +697,23 @@ def setup_options():
     usage="%prog: [options] (input_filename)"
     description = ""
 
-    parser = OptionParser(conflict_handler="resolve", usage=usage, description=description)
-    parser.add_option("-B", "--block-length", type="int", default=8192,
+    parser = ArgumentParser(conflict_handler="resolve", usage=usage, description=description)
+    parser.add_option("-B", "--block-length", type=int, default=8192,
                       help="Specify the block size [default=%default]")
-    parser.add_option("-s", "--start", type="int", default=0,
+    parser.add_option("-s", "--start", type=int, default=0,
                       help="Specify where to start in the file [default=%default]")
-    parser.add_option("-R", "--sample-rate", type="float", default=1.0,
+    parser.add_option("-R", "--sample-rate", type=float, default=1.0,
                       help="Set the sampler rate of the data [default=%default]")
-    parser.add_option("", "--psd-size", type="int", default=2048,
+    parser.add_option("", "--psd-size", type=int, default=2048,
                       help="Set the size of the PSD FFT [default=%default]")
-    parser.add_option("", "--spec-size", type="int", default=2048,
+    parser.add_option("", "--spec-size", type=int, default=2048,
                       help="Set the size of the spectrogram FFT [default=%default]")
 
     return parser
 
 def main(args):
     parser = setup_options()
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
     if(len(args) == 1):
         filename = args[0]
