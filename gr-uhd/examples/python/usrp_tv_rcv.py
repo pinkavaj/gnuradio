@@ -49,10 +49,10 @@ except:
 from gnuradio import uhd
 from gnuradio import analog
 from gnuradio import blocks
-from gnuradio.eng_option import eng_option
+from gnuradio.eng_arg import eng_float, intx
 from gnuradio.wxgui import slider, powermate
 from gnuradio.wxgui import stdgui2, fftsink2, form
-from optparse import OptionParser
+from argparse import ArgumentParser
 import sys
 import wx
 
@@ -63,37 +63,37 @@ class tv_rx_block (stdgui2.std_top_block):
 
         usage="%prog: [options] [input_filename]. \n If you don't specify an input filename the usrp will be used as source\n " \
               "Make sure your input capture file containes interleaved shorts not complex floats"
-        parser=OptionParser(option_class=eng_option, usage=usage)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser=ArgumentParser(usage=usage)
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
 	                  help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("-s", "--samp-rate", type="eng_float", default=1e6,
+        parser.add_argument("-s", "--samp-rate", type=eng_float, default=1e6,
                           help="set sample rate")
-        parser.add_option("-f", "--freq", type="eng_float", default=519.25e6,
+        parser.add_argument("-f", "--freq", type=eng_float, default=519.25e6,
                           help="set frequency to FREQ", metavar="FREQ")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_argument("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
-        parser.add_option("-c", "--contrast", type="eng_float", default=1.0,
+        parser.add_argument("-c", "--contrast", type=eng_float, default=1.0,
                           help="set contrast (default is 1.0)")
-        parser.add_option("-b", "--brightness", type="eng_float", default=0.0,
+        parser.add_argument("-b", "--brightness", type=eng_float, default=0.0,
                           help="set brightness (default is 0)")
-        parser.add_option("-p", "--pal", action="store_true", default=False,
+        parser.add_argument("-p", "--pal", action="store_true", default=False,
                           help="PAL video format (this is the default)")
-        parser.add_option("-n", "--ntsc", action="store_true", default=False,
+        parser.add_argument("-n", "--ntsc", action="store_true", default=False,
                           help="NTSC video format")
-        parser.add_option("-o", "--out-filename", type="string", default="sdl",
+        parser.add_argument("-o", "--out-filename", default="sdl",
                           help="For example out_raw_uchar.gray. If you don't specify an output filename you will get a video_sink_sdl realtime output window. You then need to have gr-video-sdl installed)")
-        parser.add_option("-r", "--repeat", action="store_false", default=True,
+        parser.add_argument("-r", "--repeat", action="store_false", default=True,
                           help="repeat file in a loop")
-        parser.add_option("", "--freq-min", type="eng_float", default=50.25e6,
+        parser.add_argument("", "--freq-min", type=eng_float, default=50.25e6,
                           help="Set a minimum frequency [default=%default]")
-        parser.add_option("", "--freq-max", type="eng_float", default=900.25e6,
+        parser.add_argument("", "--freq-max", type=eng_float, default=900.25e6,
                           help="Set a maximum frequency [default=%default]")
 
-        (options, args) = parser.parse_args()
+        args = parser.parse_args()
         if not ((len(args) == 1) or (len(args) == 0)):
             parser.print_help()
             sys.exit(1)
@@ -106,67 +106,67 @@ class tv_rx_block (stdgui2.std_top_block):
         self.frame = frame
         self.panel = panel
 
-        self.contrast = options.contrast
-        self.brightness = options.brightness
+        self.contrast = args.contrast
+        self.brightness = args.brightness
         self.state = "FREQ"
         self.freq = 0
 
-        self.tv_freq_min = options.freq_min
-        self.tv_freq_max = options.freq_max
+        self.tv_freq_min = args.freq_min
+        self.tv_freq_max = args.freq_max
 
         # build graph
         self.u=None
 
-        if not (options.out_filename=="sdl"):
-          options.repeat=False
+        if not (args.out_filename=="sdl"):
+          args.repeat=False
 
-        usrp_rate = options.samp_rate
+        usrp_rate = args.samp_rate
 
         if not ((filename is None) or (filename=="usrp")):
           # file is data source
-          self.filesource = blocks.file_source(gr.sizeof_short,filename,options.repeat)
+          self.filesource = blocks.file_source(gr.sizeof_short,filename,args.repeat)
           self.istoc = blocks.interleaved_short_to_complex()
           self.connect(self.filesource,self.istoc)
           self.src=self.istoc
 
-          options.gain=0.0
+          args.gain=0.0
           self.gain=0.0
 
         else: # use a UHD device
-          self.u = uhd.usrp_source(device_addr=options.args, stream_args=uhd.stream_args('fc32'))
+          self.u = uhd.usrp_source(device_addr=args.args, stream_args=uhd.stream_args('fc32'))
 
           # Set the subdevice spec
-          if(options.spec):
-            self.u.set_subdev_spec(options.spec, 0)
+          if(args.spec):
+            self.u.set_subdev_spec(args.spec, 0)
 
           # Set the antenna
-          if(options.antenna):
-            self.u.set_antenna(options.antenna, 0)
+          if(args.antenna):
+            self.u.set_antenna(args.antenna, 0)
 
           self.u.set_samp_rate(usrp_rate)
           dev_rate = self.u.get_samp_rate()
 
-          if options.gain is None:
+          if args.gain is None:
             # if no gain was specified, use the mid-point in dB
             g = self.u.get_gain_range()
-            options.gain = float(g.start()+g.stop())/2.0
+            args.gain = float(g.start()+g.stop())/2.0
 
           self.src=self.u
 
-        self.gain = options.gain
+        self.gain = args.gain
 
         f2uc = blocks.float_to_uchar()
 
         # sdl window as final sink
-        if not (options.pal or options.ntsc):
-          options.pal=True #set default to PAL
+        if not (args.pal or args.ntsc):
+          args.pal=True #set default to PAL
 
-        if options.pal:
+        if args.pal:
           lines_per_frame=625.0
           frames_per_sec=25.0
           show_width=768
 
-        elif options.ntsc:
+        elif args.ntsc:
           lines_per_frame=525.0
           frames_per_sec=29.97002997
           show_width=640
@@ -174,7 +174,7 @@ class tv_rx_block (stdgui2.std_top_block):
         width=int(usrp_rate/(lines_per_frame*frames_per_sec))
         height=int(lines_per_frame)
 
-        if (options.out_filename=="sdl"):
+        if (args.out_filename=="sdl"):
           #Here comes the tv screen, you have to build and install
           #gr-video-sdl for this (subproject of gnuradio, only in cvs
           #for now)
@@ -190,10 +190,10 @@ class tv_rx_block (stdgui2.std_top_block):
           print "You can use the imagemagick display tool to show the resulting imagesequence"
           print "use the following line to show the demodulated TV-signal:"
           print "display -depth 8 -size " +str(width)+ "x" + str(height) \
-              + " gray:" + options.out_filename
+              + " gray:" + args.out_filename
           print "(Use the spacebar to advance to next frames)"
-          options.repeat=False
-          file_sink = blocks.file_sink(gr.sizeof_char, options.out_filename)
+          args.repeat=False
+          file_sink = blocks.file_sink(gr.sizeof_char, args.out_filename)
           self.dst =file_sink
 
         self.agc = analog.agc_cc(1e-7,1.0,1.0) #1e-7
@@ -202,7 +202,7 @@ class tv_rx_block (stdgui2.std_top_block):
         self.invert_and_scale = blocks.multiply_const_ff (0.0) #-self.contrast *128.0*255.0/(200.0)
 
         # now wire it all together
-        #sample_rate=options.width*options.height*options.framerate
+        #sample_rate=args.width*args.height*args.framerate
 
         process_type='do_no_sync'
         if process_type=='do_no_sync':
@@ -256,15 +256,15 @@ class tv_rx_block (stdgui2.std_top_block):
         if(frange.start() > self.tv_freq_max or frange.stop() <  self.tv_freq_min):
             sys.stderr.write("Radio does not support required frequency range.\n")
             sys.exit(1)
-        if(options.freq < self.tv_freq_min or options.freq > self.tv_freq_max):
+        if(args.freq < self.tv_freq_min or args.freq > self.tv_freq_max):
             sys.stderr.write("Requested frequency is outside of required frequency range.\n")
             sys.exit(1)
 
         # set initial values
-        self.set_gain(options.gain)
+        self.set_gain(args.gain)
         self.set_contrast(self.contrast)
-        self.set_brightness(options.brightness)
-        if not(self.set_freq(options.freq)):
+        self.set_brightness(args.brightness)
+        if not(self.set_freq(args.freq)):
             self._set_status_msg("Failed to set initial frequency")
 
 
