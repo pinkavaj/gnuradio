@@ -38,8 +38,9 @@ class ModToolRemove(ModTool):
     def __init__(self):
         ModTool.__init__(self)
 
-    def setup(self, options, args):
-        ModTool.setup(self, options, args)
+    def setup(self, option, args):
+# TODO
+        ModTool.setup(self, option, args)
 
         if options.block_name is not None:
             self._info['pattern'] = options.block_name
