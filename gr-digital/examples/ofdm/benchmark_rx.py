@@ -22,8 +22,8 @@
 
 from gnuradio import gr
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 from gnuradio import blocks
 from gnuradio import digital
@@ -38,14 +38,14 @@ class my_top_block(gr.top_block):
     def __init__(self, callback, options):
         gr.top_block.__init__(self)
 
-        if(options.rx_freq is not None):
-            self.source = uhd_receiver(options.args,
-                                       options.bandwidth, options.rx_freq, 
-                                       options.lo_offset, options.rx_gain,
-                                       options.spec, options.antenna,
-                                       options.clock_source, options.verbose)
-        elif(options.from_file is not None):
-            self.source = blocks.file_source(gr.sizeof_gr_complex, options.from_file)
+        if(args.rx_freq is not None):
+            self.source = uhd_receiver(args.args,
+                                       args.bandwidth, args.rx_freq, 
+                                       args.lo_offset, args.rx_gain,
+                                       args.spec, args.antenna,
+                                       args.clock_source, args.verbose)
+        elif(args.from_file is not None):
+            self.source = blocks.file_source(gr.sizeof_gr_complex, args.from_file)
         else:
             self.source = blocks.null_source(gr.sizeof_gr_complex)
 
@@ -88,21 +88,21 @@ def main():
             print printable
             print "\n"
 
-    parser = OptionParser(option_class=eng_option, conflict_handler="resolve")
-    expert_grp = parser.add_option_group("Expert")
-    parser.add_option("","--discontinuous", action="store_true", default=False,
+    parser = ArgumentParser(conflict_handler="resolve")
+    expert_grp = parser.add_argument_group("Expert")
+    parser.add_argument("","--discontinuous", action="store_true", default=False,
                       help="enable discontinuous")
-    parser.add_option("","--from-file", default=None,
+    parser.add_argument("","--from-file", default=None,
                       help="input file of samples to demod")
 
-    receive_path.add_options(parser, expert_grp)
-    uhd_receiver.add_options(parser)
-    digital.ofdm_demod.add_options(parser, expert_grp)
+    receive_path.add_arguments(parser, expert_grp)
+    uhd_receiver.add_arguments(parser)
+    digital.ofdm_demod.add_arguments(parser, expert_grp)
 
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
-    if options.from_file is None:
-        if options.rx_freq is None:
+    if args.from_file is None:
+        if args.rx_freq is None:
             sys.stderr.write("You must specify -f FREQ or --freq FREQ\n")
             parser.print_help(sys.stderr)
             sys.exit(1)
