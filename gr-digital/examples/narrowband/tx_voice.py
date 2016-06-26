@@ -22,8 +22,8 @@
 
 from gnuradio import gr, audio, uhd
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 from gnuradio import blocks
 from gnuradio import filter
@@ -67,20 +67,20 @@ class my_top_block(gr.top_block):
     def __init__(self, modulator_class, options):
         gr.top_block.__init__(self)
         self.txpath = transmit_path(modulator_class, options)
-        self.audio_rx = audio_rx(options.audio_input)
+        self.audio_rx = audio_rx(args.audio_input)
 
-        if(options.tx_freq is not None):
-            self.sink = uhd_transmitter(options.address, options.bitrate,
-                                        options.samples_per_symbol,
-                                        options.tx_freq, options.tx_gain,
-                                        options.antenna, options.verbose)
-            options.samples_per_symbol = self.sink._sps
+        if(args.tx_freq is not None):
+            self.sink = uhd_transmitter(args.address, args.bitrate,
+                                        args.samples_per_symbol,
+                                        args.tx_freq, args.tx_gain,
+                                        args.antenna, args.verbose)
+            args.samples_per_symbol = self.sink._sps
             audio_rate = self.audio_rx.sample_rate
             usrp_rate = self.sink.get_sample_rate()
             rrate = usrp_rate / audio_rate
             
-        elif(options.to_file is not None):
-            self.sink = blocks.file_sink(gr.sizeof_gr_complex, options.to_file)
+        elif(args.to_file is not None):
+            self.sink = blocks.file_sink(gr.sizeof_gr_complex, args.to_file)
             rrate = 1
         else:
             self.sink = blocks.null_sink(gr.sizeof_gr_complex)
@@ -106,41 +106,37 @@ def main():
 
     mods = digital.modulation_utils.type_1_mods()
 
-    parser = OptionParser(option_class=eng_option, conflict_handler="resolve")
-    expert_grp = parser.add_option_group("Expert")
+    parser = ArgumentParser(conflict_handler="resolve")
+    expert_grp = parser.add_argument_group("Expert")
 
-    parser.add_option("-m", "--modulation", type="choice", choices=mods.keys(),
+    parser.add_argument("-m", "--modulation", choices=mods.keys(),
                       default='gmsk',
-                      help="Select modulation from: %s [default=%%default]"
+                      help="Select modulation from: %s [default=%%(default)r]"
                             % (', '.join(mods.keys()),))
-    parser.add_option("-M", "--megabytes", type="eng_float", default=0,
+    parser.add_argument("-M", "--megabytes", type=eng_float, default=0,
                       help="set megabytes to transmit [default=inf]")
-    parser.add_option("-I", "--audio-input", type="string", default="",
+    parser.add_argument("-I", "--audio-input", default="",
                       help="pcm input device name.  E.g., hw:0,0 or /dev/dsp")
-    parser.add_option("","--to-file", default=None,
+    parser.add_argument("--to-file",
                       help="Output file for modulated samples")
 
-    transmit_path.add_options(parser, expert_grp)
-    uhd_transmitter.add_options(parser)
+    transmit_path.add_arguments(parser, expert_grp)
+    uhd_transmitter.add_arguments(parser)
 
     for mod in mods.values():
-        mod.add_options(expert_grp)
+        mod.add_arguments(expert_grp)
 
     parser.set_defaults(bitrate=50e3)  # override default bitrate default
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
-    if len(args) != 0:
-        parser.print_help()
-        sys.exit(1)
-
-    if options.to_file is None:
-        if options.tx_freq is None:
+    if args.to_file is None:
+        if args.tx_freq is None:
             sys.stderr.write("You must specify -f FREQ or --freq FREQ\n")
             parser.print_help(sys.stderr)
             sys.exit(1)
 
     # build the graph
-    tb = my_top_block(mods[options.modulation], options)
+    tb = my_top_block(mods[args.modulation], options)
 
     r = gr.enable_realtime_scheduling()
     if r != gr.RT_OK:
@@ -150,7 +146,7 @@ def main():
     tb.start()                       # start flow graph
 
     # generate and send packets
-    nbytes = int(1e6 * options.megabytes)
+    nbytes = int(1e6 * args.megabytes)
     n = 0
     pktno = 0
 
