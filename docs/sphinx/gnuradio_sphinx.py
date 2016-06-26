@@ -172,8 +172,8 @@ class OldBlockDocumenter(FunctionDocumenter):
         self.classdoccer = ClassDocumenter(self.directive, sptr_name, indent=self.content_indent)
         self.classdoccer.doc_as_attr = False
         self.classdoccer.real_modname = self.classdoccer.get_real_modname()
-        self.classdoccer.options.members = ALL
-        self.classdoccer.options.exclude_members = common_block_members
+        self.classdoccer.args.members = ALL
+        self.classdoccer.args.exclude_members = common_block_members
         self.classdoccer.parse_name()
         self.classdoccer.import_object()
 
@@ -201,8 +201,8 @@ class BlockDocumenter(FunctionDocumenter):
         self.classdoccer = ClassDocumenter(self.directive, sptr_name, indent=self.content_indent)
         self.classdoccer.doc_as_attr = False
         self.classdoccer.real_modname = self.classdoccer.get_real_modname()
-        self.classdoccer.options.members = ALL
-        self.classdoccer.options.exclude_members = common_block_members
+        self.classdoccer.args.members = ALL
+        self.classdoccer.args.exclude_members = common_block_members
         self.classdoccer.parse_name()
         self.classdoccer.import_object()
 
@@ -218,5 +218,5 @@ class PyBlockDocumenter(ClassDocumenter):
 
     def __init__(self, *args, **kwargs):
         super(PyBlockDocumenter, self).__init__(*args, **kwargs)
-        self.options.members = ALL
-        self.options.exclude_members = common_block_members
+        self.args.members = ALL
+        self.args.exclude_members = common_block_members
