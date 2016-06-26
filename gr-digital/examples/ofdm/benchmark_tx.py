@@ -22,8 +22,8 @@
 
 from gnuradio import gr
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import time, struct, sys
 
 from gnuradio import digital
@@ -37,14 +37,14 @@ class my_top_block(gr.top_block):
     def __init__(self, options):
         gr.top_block.__init__(self)
 
-        if(options.tx_freq is not None):
-            self.sink = uhd_transmitter(options.args,
-                                        options.bandwidth, options.tx_freq, 
-                                        options.lo_offset, options.tx_gain,
-                                        options.spec, options.antenna,
-                                        options.clock_source, options.verbose)
-        elif(options.to_file is not None):
-            self.sink = blocks.file_sink(gr.sizeof_gr_complex, options.to_file)
+        if(args.tx_freq is not None):
+            self.sink = uhd_transmitter(args.args,
+                                        args.bandwidth, args.tx_freq, 
+                                        args.lo_offset, args.tx_gain,
+                                        args.spec, args.antenna,
+                                        args.clock_source, args.verbose)
+        elif(args.to_file is not None):
+            self.sink = blocks.file_sink(gr.sizeof_gr_complex, args.to_file)
         else:
             self.sink = blocks.null_sink(gr.sizeof_gr_complex)
 
@@ -63,24 +63,24 @@ def main():
     def send_pkt(payload='', eof=False):
         return tb.txpath.send_pkt(payload, eof)
 
-    parser = OptionParser(option_class=eng_option, conflict_handler="resolve")
-    expert_grp = parser.add_option_group("Expert")
-    parser.add_option("-s", "--size", type="eng_float", default=400,
+    parser = ArgumentParser(conflict_handler="resolve")
+    expert_grp = parser.add_argument_group("Expert")
+    parser.add_argument("-s", "--size", type=eng_float, default=400,
                       help="set packet size [default=%default]")
-    parser.add_option("-M", "--megabytes", type="eng_float", default=1.0,
+    parser.add_argument("-M", "--megabytes", type=eng_float, default=1.0,
                       help="set megabytes to transmit [default=%default]")
-    parser.add_option("","--discontinuous", action="store_true", default=False,
+    parser.add_argument("","--discontinuous", action="store_true", default=False,
                       help="enable discontinuous mode")
-    parser.add_option("","--from-file", default=None,
+    parser.add_argument("","--from-file", default=None,
                       help="use intput file for packet contents")
-    parser.add_option("","--to-file", default=None,
+    parser.add_argument("","--to-file", default=None,
                       help="Output file for modulated samples")
 
-    transmit_path.add_options(parser, expert_grp)
-    digital.ofdm_mod.add_options(parser, expert_grp)
-    uhd_transmitter.add_options(parser)
+    transmit_path.add_arguments(parser, expert_grp)
+    digital.ofdm_mod.add_arguments(parser, expert_grp)
+    uhd_transmitter.add_arguments(parser)
 
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
     # build the graph
     tb = my_top_block(options)
@@ -92,13 +92,13 @@ def main():
     tb.start()                       # start flow graph
     
     # generate and send packets
-    nbytes = int(1e6 * options.megabytes)
+    nbytes = int(1e6 * args.megabytes)
     n = 0
     pktno = 0
-    pkt_size = int(options.size)
+    pkt_size = int(args.size)
 
     while n < nbytes:
-        if options.from_file is None:
+        if args.from_file is None:
             data = (pkt_size - 2) * chr(pktno & 0xff) 
         else:
             data = source_file.read(pkt_size - 2)
@@ -109,7 +109,7 @@ def main():
         send_pkt(payload)
         n += len(payload)
         sys.stderr.write('.')
-        if options.discontinuous and pktno % 5 == 4:
+        if args.discontinuous and pktno % 5 == 4:
             time.sleep(1)
         pktno += 1
         
