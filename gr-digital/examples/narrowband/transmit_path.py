@@ -19,10 +19,12 @@
 # Boston, MA 02110-1301, USA.
 # 
 
+from argparse import ArgumentError
 from gnuradio import gr
 from gnuradio import eng_notation
 from gnuradio import blocks
 from gnuradio import digital
+from gnuradio.eng_arg import eng_float
 
 import copy
 import sys
@@ -32,23 +34,23 @@ import sys
 # /////////////////////////////////////////////////////////////////////////////
 
 class transmit_path(gr.hier_block2):
-    def __init__(self, modulator_class, options):
+    def __init__(self, modulator_class, args):
         '''
-        See below for what options should hold
+        See below for what args should hold
         '''
 	gr.hier_block2.__init__(self, "transmit_path",
 				gr.io_signature(0,0,0),
 				gr.io_signature(1,1,gr.sizeof_gr_complex))
         
-        options = copy.copy(options)    # make a copy so we can destructively modify
+        args = copy.copy(args)    # make a copy so we can destructively modify
 
-        self._verbose      = options.verbose
-        self._tx_amplitude = options.tx_amplitude   # digital amplitude sent to USRP
-        self._bitrate      = options.bitrate        # desired bit rate
+        self._verbose      = args.verbose
+        self._tx_amplitude = args.tx_amplitude   # digital amplitude sent to USRP
+        self._bitrate      = args.bitrate        # desired bit rate
         self._modulator_class = modulator_class     # the modulator_class we are using
 
         # Get mod_kwargs
-        mod_kwargs = self._modulator_class.extract_kwargs_from_options(options)
+        mod_kwargs = self._modulator_class.extract_kwargs_from_args(args)
         
         # transmitter
 	self.modulator = self._modulator_class(**mod_kwargs)
@@ -95,24 +97,26 @@ class transmit_path(gr.hier_block2):
         return self.modulator._differential
 
     @staticmethod
-    def add_options(normal, expert):
+    def add_arguments(normal, expert):
         """
-        Adds transmitter-specific options to the Options Parser
+        Adds transmitter-specific args to the Options Parser
         """
-        if not normal.has_option('--bitrate'):
-            normal.add_option("-r", "--bitrate", type="eng_float",
+        try:
+            normal.add_argument("-r", "--bitrate", type=eng_float,
                               default=100e3,
-                              help="specify bitrate [default=%default].")
-        normal.add_option("", "--tx-amplitude", type="eng_float",
+                              help="specify bitrate [default=%(default)r].")
+        except ArgumentError:
+            pass
+        normal.add_argument("--tx-amplitude", type=eng_float,
                           default=0.250, metavar="AMPL",
-                          help="set transmitter digital amplitude: 0 <= AMPL < 1 [default=%default]")
-        normal.add_option("-v", "--verbose", action="store_true",
+                          help="set transmitter digital amplitude: 0 <= AMPL < 1 [default=%(default)r]")
+        normal.add_argument("-v", "--verbose", action="store_true",
                           default=False)
 
-        expert.add_option("-S", "--samples-per-symbol", type="float",
+        expert.add_argument("-S", "--samples-per-symbol", type=float,
                           default=2,
-                          help="set samples/symbol [default=%default]")
-        expert.add_option("", "--log", action="store_true",
+                          help="set samples/symbol [default=%(default)r]")
+        expert.add_argument("--log", action="store_true",
                           default=False,
                           help="Log all parts of flow graph to file (CAUTION: lots of data)")
 
