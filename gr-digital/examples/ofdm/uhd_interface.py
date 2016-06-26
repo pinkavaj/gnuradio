@@ -22,8 +22,8 @@
 
 from gnuradio import gr, uhd
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 import sys
 
@@ -36,7 +36,7 @@ def add_freq_option(parser):
         parser.values.tx_freq = value
 
     if not parser.has_option('--freq'):
-        parser.add_option('-f', '--freq', type="eng_float",
+        parser.add_argument('-f', '--freq', type=eng_float,
                           action="callback", callback=freq_callback,
                           help="set Tx and/or Rx frequency to FREQ [default=%default]",
                           metavar="FREQ")
@@ -128,24 +128,24 @@ class uhd_transmitter(uhd_interface, gr.hier_block2):
             self._print_verbage()
 
     @staticmethod
-    def add_options(parser):
+    def add_arguments(parser):
         add_freq_option(parser)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
                           help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("", "--tx-freq", type="eng_float", default=None,
+        parser.add_argument("", "--tx-freq", type=eng_float, default=None,
                           help="set transmit frequency to FREQ [default=%default]",
                           metavar="FREQ")
-        parser.add_option("", "--lo-offset", type="eng_float", default=0,
+        parser.add_argument("", "--lo-offset", type=eng_float, default=0,
                           help="set local oscillator offset in Hz (default is 0)")
-        parser.add_option("", "--tx-gain", type="eng_float", default=None,
+        parser.add_argument("", "--tx-gain", type=eng_float, default=None,
                           help="set transmit gain in dB (default is midpoint)")
-        parser.add_option("-C", "--clock-source", type="string", default=None,
+        parser.add_argument("-C", "--clock-source", default=None,
                           help="select clock source (e.g. 'external') [default=%default]")
-        parser.add_option("-v", "--verbose", action="store_true", default=False)
+        parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
     def _print_verbage(self):
         """
@@ -185,25 +185,25 @@ class uhd_receiver(uhd_interface, gr.hier_block2):
             self._print_verbage()
 
     @staticmethod
-    def add_options(parser):
+    def add_arguments(parser):
         add_freq_option(parser)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
                           help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("", "--rx-freq", type="eng_float", default=None,
+        parser.add_argument("", "--rx-freq", type=eng_float, default=None,
                           help="set receive frequency to FREQ [default=%default]",
                           metavar="FREQ")
-        parser.add_option("", "--lo-offset", type="eng_float", default=0,
+        parser.add_argument("", "--lo-offset", type=eng_float, default=0,
                           help="set local oscillator offset in Hz (default is 0)")
-        parser.add_option("", "--rx-gain", type="eng_float", default=None,
+        parser.add_argument("", "--rx-gain", type=eng_float, default=None,
                           help="set receive gain in dB (default is midpoint)")
-        parser.add_option("-C", "--clock-source", type="string", default=None,
+        parser.add_argument("-C", "--clock-source", default=None,
                           help="select clock source (e.g. 'external') [default=%default]")
         if not parser.has_option("--verbose"):
-            parser.add_option("-v", "--verbose", action="store_true", default=False)
+            parser.add_argument("-v", "--verbose", action="store_true", default=False)
 
     def _print_verbage(self):
         """
