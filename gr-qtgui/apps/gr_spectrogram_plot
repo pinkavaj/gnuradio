@@ -142,7 +142,7 @@ def read_header(filelist):
 def main():
    description = 'Plots the spectrogram (waterfall) of a file with detached header.'
    description += ' Assumes header is <input_filename>.hdr'
-   (options, args) = plot_base.setup_options(description)
+   args = plot_base.setup_options(description)
    filelist = list(args)
    # Attempt to read the header information
    info = read_header(filelist)
