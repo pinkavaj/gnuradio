@@ -23,8 +23,8 @@
 from gnuradio import gr, gru
 from gnuradio import uhd
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 import sys
 import numpy
@@ -45,40 +45,40 @@ class app_top_block(stdgui2.std_top_block):
         self.frame = frame
         self.panel = panel
 
-        parser = OptionParser(option_class=eng_option)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser = ArgumentParser()
+        parser.add_option("-a", "--args", default="",
                           help="UHD device address args , [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_option("", "--spec", default=None,
                           help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_option("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("-s", "--samp-rate", type="eng_float", default=1e6,
+        parser.add_option("-s", "--samp-rate", type=eng_float, default=1e6,
                           help="set sample rate (bandwidth) [default=%default]")
-        parser.add_option("-f", "--freq", type="eng_float", default=None,
+        parser.add_option("-f", "--freq", type=eng_float, default=None,
                           help="set frequency to FREQ", metavar="FREQ")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_option("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
         parser.add_option("-W", "--waterfall", action="store_true", default=False,
                           help="Enable waterfall display")
         parser.add_option("-S", "--oscilloscope", action="store_true", default=False,
                           help="Enable oscilloscope display")
-        parser.add_option("", "--avg-alpha", type="eng_float", default=1e-1,
+        parser.add_option("", "--avg-alpha", type=eng_float, default=1e-1,
                           help="Set fftsink averaging factor, default=[%default]")
         parser.add_option ("", "--averaging", action="store_true", default=False,
                            help="Enable fftsink averaging, default=[%default]")
-        parser.add_option("", "--ref-scale", type="eng_float", default=1.0,
+        parser.add_option("", "--ref-scale", type=eng_float, default=1.0,
                           help="Set dBFS=0dB input value, default=[%default]")
-        parser.add_option("", "--fft-size", type="int", default=1024,
+        parser.add_option("", "--fft-size", type=int, default=1024,
                           help="Set number of FFT bins [default=%default]")
-        parser.add_option("", "--fft-rate", type="int", default=30,
+        parser.add_option("", "--fft-rate", type=int, default=30,
                           help="Set FFT update rate, [default=%default]")
-        parser.add_option("", "--wire-format", type="string", default="sc16",
+        parser.add_option("", "--wire-format", default="sc16",
                           help="Set wire format from USRP [default=%default]")
-        parser.add_option("", "--stream-args", type="string", default="",
+        parser.add_option("", "--stream-args", default="",
                           help="Set additional stream args [default=%default]")
         parser.add_option("", "--show-async-msg", action="store_true", default=False,
                           help="Show asynchronous message notifications from UHD [default=%default]")
-        (options, args) = parser.parse_args()
+        args = parser.parse_args()
         if len(args) != 0:
             parser.print_help()
             sys.exit(1)
