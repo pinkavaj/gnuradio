@@ -57,7 +57,7 @@ def add_type_1_constellation(name, constellation):
     _type_1_constellations[name] = constellation
 
 
-def extract_kwargs_from_options(function, excluded_args, options):
+def extract_kwargs_from_args(function, excluded_args, options):
     """
     Given a function, a list of excluded arguments and the result of
     parsing command line options, create a dictionary of key word
@@ -77,7 +77,7 @@ def extract_kwargs_from_options(function, excluded_args, options):
     Args:
         function: the function whose parameter list will be examined
         excluded_args: function arguments that are NOT to be added to the dictionary (sequence of strings)
-        options: result of command argument parsing (optparse.Values)
+        options: result of command argument parsing (argparse.parse_args())
     """
     
     # Try this in C++ ;)
@@ -89,13 +89,13 @@ def extract_kwargs_from_options(function, excluded_args, options):
                 d[kw] = getattr(options, kw)
     return d
 
-def extract_kwargs_from_options_for_class(cls, options):
+def extract_kwargs_from_args_for_class(cls, options):
     """
     Given command line options, create dictionary suitable for passing to __init__
     """
-    d = extract_kwargs_from_options(
+    d = extract_kwargs_from_args(
         cls.__init__, ('self',), options)
     for base in cls.__bases__:
-        if hasattr(base, 'extract_kwargs_from_options'):
-            d.update(base.extract_kwargs_from_options(options))
+        if hasattr(base, 'extract_kwargs_from_args'):
+            d.update(base.extract_kwargs_from_args(options))
     return d
