@@ -21,7 +21,7 @@
 # 
 
 import math, struct, sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from math import log10
 
 try:
@@ -51,10 +51,10 @@ class draw_constellation:
         self.h_acq_file = open(acq_file, "r")
         self.h_fft_file = open(fft_file, "r")
 
-        self.occ_tones = options.occ_tones
-        self.fft_size  = options.fft_size
-        self.symbol = options.start
-        self.sample_rate = options.sample_rate
+        self.occ_tones = args.occ_tones
+        self.fft_size  = args.fft_size
+        self.symbol = args.start
+        self.sample_rate = args.sample_rate
         
         self.axis_font_size = 16
         self.label_font_size = 18
@@ -252,27 +252,24 @@ def find(item_in, list_search):
     return False
 
 def main():
-    usage="%prog: [options]"
+    parser = ArgumentParser(conflict_handler="resolve")
+    parser.add_argument("--fft-size", type=int, default=512,
+                      help="Specify the size of the FFT [default=%(default)r]")
+    parser.add_argument("--occ-tones", type=int, default=200,
+                      help="Specify the number of occupied tones [default=%(default)r]")
+    parser.add_argument("-s", "--start", type=int, default=0,
+                      help="Specify the starting symbol to plot [default=%(default)r]")
+    parser.add_argument("-R", "--sample-rate", type=float, default=1.0,
+                      help="Set the sampler rate of the data [default=%(default)r]")
 
-    parser = OptionParser(conflict_handler="resolve", usage=usage)
-    parser.add_option("", "--fft-size", type="int", default=512,
-                      help="Specify the size of the FFT [default=%default]")
-    parser.add_option("", "--occ-tones", type="int", default=200,
-                      help="Specify the number of occupied tones [default=%default]")
-    parser.add_option("-s", "--start", type="int", default=0,
-                      help="Specify the starting symbol to plot [default=%default]")
-    parser.add_option("-R", "--sample-rate", type="float", default=1.0,
-                      help="Set the sampler rate of the data [default=%default]")
-    
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
-    dc = draw_constellation(options)
+    dc = draw_constellation(args)
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
         pass
-    
 
 
