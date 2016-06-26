@@ -189,7 +189,7 @@ class SCMRepoFactory(object):
 
     def make_active_scm_manager(self):
         """ Returns a valid, usable object of type SCMRepository. """
-        if self.options.scm_mode == 'no':
+        if self.args.scm_mode == 'no':
             return SCMRepository(self.path_to_repo)
         for glbl in globals().values():
             try:
@@ -206,7 +206,7 @@ class SCMRepoFactory(object):
 
     def make_empty_scm_manager(self, scm_type='git'):
         """ Returns a valid, usable object of type SCMRepository for an unitialized dir. """
-        if self.options.scm_mode == 'no':
+        if self.args.scm_mode == 'no':
             return SCMRepository(self.path_to_repo)
         for glbl in globals().values():
             try:
