@@ -264,7 +264,7 @@ class UHDApp(object):
             skip_freq=False,
         ):
         """
-        Create or amend an argument parser with typical USRP options.
+        Create or amend an argument parser with typical USRP args.
         """
         def cslist(string):
             """
