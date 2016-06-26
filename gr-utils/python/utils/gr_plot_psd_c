@@ -20,7 +20,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 from gnuradio.plot_psd_base import plot_psd_base
 
 # This is a wrapper program for plot_psd_base specifically for complex data
@@ -29,7 +29,7 @@ def main():
     parser = plot_psd_base.setup_options()
     parser.remove_option("--data-type")
 
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
     if len(args) != 1:
         parser.print_help()
         raise SystemExit, 1
