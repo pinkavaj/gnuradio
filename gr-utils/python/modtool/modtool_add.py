@@ -22,7 +22,6 @@
 
 import os
 import re
-from optparse import OptionGroup
 
 from util_functions import append_re_line_sequence, ask_yes_no
 from cmakefile_editor import CMakeFileEditor
@@ -46,28 +45,27 @@ class ModToolAdd(ModTool):
 
     def setup_parser(self):
         parser = ModTool.setup_parser(self)
-        ogroup = OptionGroup(parser, "Add module options")
-        ogroup.add_option("-t", "--block-type", type="choice",
-                choices=self._block_types, default=None, help="One of %s." % ', '.join(self._block_types))
-        ogroup.add_option("--license-file", type="string", default=None,
+        args_group = parser.add_argument_group("Module options")
+        args_group.add_argument("-t", "--block-type", choices=self._block_types,
+                help="One of %s." % ', '.join(self._block_types))
+        args_group.add_argument("--license-file",
                 help="File containing the license header for every source code file.")
-        ogroup.add_option("--copyright", type="string", default=None,
+        args_group.add_argument("--copyright",
                 help="Name of the copyright holder (you or your company) MUST be a quoted string.")
-        ogroup.add_option("--argument-list", type="string", default=None,
+        args_group.add_argument("--argument-list",
                 help="The argument list for the constructor and make functions.")
-        ogroup.add_option("--add-python-qa", action="store_true", default=None,
+        args_group.add_argument("--add-python-qa", action="store_true", default=None,
                 help="If given, Python QA code is automatically added if possible.")
-        ogroup.add_option("--add-cpp-qa", action="store_true", default=None,
+        args_group.add_argument("--add-cpp-qa", action="store_true", default=None,
                 help="If given, C++ QA code is automatically added if possible.")
-        ogroup.add_option("--skip-cmakefiles", action="store_true", default=False,
+        args_group.add_argument("--skip-cmakefiles", action="store_true",
                 help="If given, only source files are written, but CMakeLists.txt files are left unchanged.")
-        ogroup.add_option("-l", "--lang", type="choice", choices=('cpp', 'c++', 'python'),
+        args_group.add_argument("-l", "--lang", choices=('cpp', 'c++', 'python'),
                 default=None, help="Language (cpp or python)")
-        parser.add_option_group(ogroup)
         return parser
 
-    def setup(self, options, args):
-        ModTool.setup(self, options, args)
+    def setup(self, options):
+        ModTool.setup(self, options)
 
         self._info['blocktype'] = options.block_type
         if self._info['blocktype'] is None:
@@ -92,8 +90,8 @@ class ModToolAdd(ModTool):
             raise ModToolException('Missing or skipping relevant subdir.')
 
         if self._info['blockname'] is None:
-            if len(args) >= 2:
-                self._info['blockname'] = args[1]
+            if len(options) >= 2:
+                self._info['blockname'] = options[1]
             else:
                 self._info['blockname'] = raw_input("Enter name of block/code (without module name prefix): ")
         if not re.match('[a-zA-Z0-9_]+', self._info['blockname']):
