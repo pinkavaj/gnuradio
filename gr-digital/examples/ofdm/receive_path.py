@@ -83,16 +83,16 @@ class receive_path(gr.hier_block2):
         """
         self.probe.set_threshold(threshold_in_db)
 
-    @staticmethod
-    def add_options(normal, expert):
+    @staticmethon
+    def add_arguments(normal, expert):
         """
         Adds receiver-specific options to the Options Parser
         """
-        normal.add_option("-W", "--bandwidth", type="eng_float",
+        normal.add_argument("-W", "--bandwidth", type=eng_float,
                           default=500e3,
-                          help="set symbol bandwidth [default=%default]")
-        normal.add_option("-v", "--verbose", action="store_true", default=False)
-        expert.add_option("", "--log", action="store_true", default=False,
+                          help="set symbol bandwidth [default=%(default)r]")
+        normal.add_argument("-v", "--verbose", action="store_true")
+        expert.add_argument("--log", action="store_true",
                           help="Log all parts of flow graph to files (CAUTION: lots of data)")
 
     def _print_verbage(self):
