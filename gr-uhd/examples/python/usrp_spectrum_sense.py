@@ -26,8 +26,8 @@ from gnuradio import audio
 from gnuradio import filter
 from gnuradio import fft
 from gnuradio import uhd
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import sys
 import math
 import struct
@@ -99,43 +99,43 @@ class my_top_block(gr.top_block):
         gr.top_block.__init__(self)
 
         usage = "usage: %prog [options] min_freq max_freq"
-        parser = OptionParser(option_class=eng_option, usage=usage)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser = ArgumentParser(usage=usage)
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default=None,
+        parser.add_argument("", "--spec", default=None,
 	                  help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("-s", "--samp-rate", type="eng_float", default=1e6,
+        parser.add_argument("-s", "--samp-rate", type=eng_float, default=1e6,
                           help="set sample rate [default=%default]")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_argument("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
-        parser.add_option("", "--tune-delay", type="eng_float",
+        parser.add_argument("", "--tune-delay", type=eng_float,
                           default=0.25, metavar="SECS",
                           help="time to delay (in seconds) after changing frequency [default=%default]")
-        parser.add_option("", "--dwell-delay", type="eng_float",
+        parser.add_argument("", "--dwell-delay", type=eng_float,
                           default=0.25, metavar="SECS",
                           help="time to dwell (in seconds) at a given frequency [default=%default]")
-        parser.add_option("-b", "--channel-bandwidth", type="eng_float",
+        parser.add_argument("-b", "--channel-bandwidth", type=eng_float,
                           default=6.25e3, metavar="Hz",
                           help="channel bandwidth of fft bins in Hz [default=%default]")
-        parser.add_option("-l", "--lo-offset", type="eng_float",
+        parser.add_argument("-l", "--lo-offset", type=eng_float,
                           default=0, metavar="Hz",
                           help="lo_offset in Hz [default=%default]")
-        parser.add_option("-q", "--squelch-threshold", type="eng_float",
+        parser.add_argument("-q", "--squelch-threshold", type=eng_float,
                           default=None, metavar="dB",
                           help="squelch threshold in dB [default=%default]")
-        parser.add_option("-F", "--fft-size", type="int", default=None,
+        parser.add_argument("-F", "--fft-size", type=int, default=None,
                           help="specify number of FFT bins [default=samp_rate/channel_bw]")
-        parser.add_option("", "--real-time", action="store_true", default=False,
+        parser.add_argument("", "--real-time", action="store_true", default=False,
                           help="Attempt to enable real-time scheduling")
 
-        (options, args) = parser.parse_args()
+        args = parser.parse_args()
         if len(args) != 2:
             parser.print_help()
             sys.exit(1)
 
-        self.channel_bandwidth = options.channel_bandwidth
+        self.channel_bandwidth = args.channel_bandwidth
 
         self.min_freq = eng_notation.str_to_num(args[0])
         self.max_freq = eng_notation.str_to_num(args[1])
@@ -144,7 +144,7 @@ class my_top_block(gr.top_block):
             # swap them
             self.min_freq, self.max_freq = self.max_freq, self.min_freq
 
-        if not options.real_time:
+        if not args.real_time:
             realtime = False
         else:
             # Attempt to enable realtime scheduling
@@ -156,28 +156,28 @@ class my_top_block(gr.top_block):
                 print "Note: failed to enable realtime scheduling"
 
         # build graph
-        self.u = uhd.usrp_source(device_addr=options.args,
+        self.u = uhd.usrp_source(device_addr=args.args,
                                  stream_args=uhd.stream_args('fc32'))
 
         # Set the subdevice spec
-        if(options.spec):
-            self.u.set_subdev_spec(options.spec, 0)
+        if(args.spec):
+            self.u.set_subdev_spec(args.spec, 0)
 
         # Set the antenna
-        if(options.antenna):
-            self.u.set_antenna(options.antenna, 0)
+        if(args.antenna):
+            self.u.set_antenna(args.antenna, 0)
 
-        self.u.set_samp_rate(options.samp_rate)
+        self.u.set_samp_rate(args.samp_rate)
         self.usrp_rate = usrp_rate = self.u.get_samp_rate()
 
-        self.lo_offset = options.lo_offset
+        self.lo_offset = args.lo_offset
 
-        if options.fft_size is None:
+        if args.fft_size is None:
             self.fft_size = int(self.usrp_rate/self.channel_bandwidth)
         else:
-            self.fft_size = options.fft_size
+            self.fft_size = args.fft_size
 
-        self.squelch_threshold = options.squelch_threshold
+        self.squelch_threshold = args.squelch_threshold
 
         s2v = blocks.stream_to_vector(gr.sizeof_gr_complex, self.fft_size)
 
@@ -203,8 +203,8 @@ class my_top_block(gr.top_block):
 
         self.next_freq = self.min_center_freq
 
-        tune_delay  = max(0, int(round(options.tune_delay * usrp_rate / self.fft_size)))  # in fft_frames
-        dwell_delay = max(1, int(round(options.dwell_delay * usrp_rate / self.fft_size))) # in fft_frames
+        tune_delay  = max(0, int(round(args.tune_delay * usrp_rate / self.fft_size)))  # in fft_frames
+        dwell_delay = max(1, int(round(args.dwell_delay * usrp_rate / self.fft_size))) # in fft_frames
 
         self.msgq = gr.msg_queue(1)
         self._tune_callback = tune(self)        # hang on to this to keep it from being GC'd
@@ -216,13 +216,13 @@ class my_top_block(gr.top_block):
 	#self.connect(self.u, s2v, ffter, c2mag, log, stats)
 	self.connect(self.u, s2v, ffter, c2mag, stats)
 
-        if options.gain is None:
+        if args.gain is None:
             # if no gain was specified, use the mid-point in dB
             g = self.u.get_gain_range()
-            options.gain = float(g.start()+g.stop())/2.0
+            args.gain = float(g.start()+g.stop())/2.0
 
-        self.set_gain(options.gain)
-        print "gain =", options.gain
+        self.set_gain(args.gain)
+        print "gain =", args.gain
 
     def set_next_freq(self):
         target_freq = self.next_freq
