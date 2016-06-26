@@ -33,7 +33,7 @@ import numpy
 import digital_swig
 import modulation_utils
 
-# default values (used in __init__ and add_options)
+# default values (used in __init__ and add_arguments)
 _def_samples_per_symbol = 2
 _def_bits_per_symbol = 1
 _def_h_numerator = 1
@@ -205,11 +205,11 @@ class cpm_mod(gr.hier_block2):
                      blocks.file_sink(gr.sizeof_gr_complex, "fmmod.dat"))
 
     @staticmethod
-    def add_options(parser):
+    def add_arguments(parser):
         """
         Adds CPM modulation-specific options to the standard parser
         """
-        parser.add_option("", "--bt", type="float", default=_def_bt,
+        parser.add_option("", "--bt", type=float, default=_def_bt,
                           help="set bandwidth-time product [default=%default] (GMSK)")
 
     @staticmethod
