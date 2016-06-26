@@ -24,8 +24,8 @@ from gnuradio import gr, audio, uhd
 from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import analog
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 import sys
 import math
 
@@ -34,49 +34,45 @@ class wfm_rx_block (gr.top_block):
     def __init__(self):
         gr.top_block.__init__(self)
 
-        parser=OptionParser(option_class=eng_option)
-        parser.add_option("-a", "--args", type="string", default="",
+        parser=ArgumentParser()
+        parser.add_argument("-a", "--args", default="",
                           help="UHD device address args [default=%default]")
-        parser.add_option("", "--spec", type="string", default="A:0 A:0",
+        parser.add_argument("", "--spec", default="A:0 A:0",
 	                  help="Subdevice of UHD device where appropriate")
-        parser.add_option("-A", "--antenna", type="string", default=None,
+        parser.add_argument("-A", "--antenna", default=None,
                           help="select Rx Antenna where appropriate")
-        parser.add_option("", "--f1", type="eng_float", default=100.7e6,
+        parser.add_argument("", "--f1", type=eng_float, default=100.7e6,
                           help="set 1st station frequency to FREQ", metavar="FREQ")
-        parser.add_option("", "--f2", type="eng_float", default=102.5e6,
+        parser.add_argument("", "--f2", type=eng_float, default=102.5e6,
                           help="set 2nd station freq to FREQ", metavar="FREQ")
-        parser.add_option("-g", "--gain", type="eng_float", default=None,
+        parser.add_argument("-g", "--gain", type=eng_float, default=None,
                           help="set gain in dB (default is midpoint)")
-        parser.add_option("-O", "--audio-output", type="string", default="default",
+        parser.add_argument("-O", "--audio-output", default="default",
                           help="pcm device name.  E.g., hw:0,0 or surround51 or /dev/dsp")
-        parser.add_option("", "--freq-min", type="eng_float", default=87.9e6,
+        parser.add_argument("", "--freq-min", type=eng_float, default=87.9e6,
                           help="Set a minimum frequency [default=%default]")
-        parser.add_option("", "--freq-max", type="eng_float", default=108.1e6,
+        parser.add_argument("", "--freq-max", type=eng_float, default=108.1e6,
                           help="Set a maximum frequency [default=%default]")
 
-        (options, args) = parser.parse_args()
-        if len(args) != 0:
-            parser.print_help()
-            sys.exit(1)
-
-        if abs(options.f1 - options.f2) > 5.5e6:
+        args = parser.parse_args()
+        if abs(args.f1 - args.f2) > 5.5e6:
             print "Sorry, two stations must be within 5.5MHz of each other"
             raise SystemExit
 
-        f = (options.f1, options.f2)
+        f = (args.f1, args.f2)
 
         self.vol = .1
         self.state = "FREQ"
 
-        self.fm_freq_min = options.freq_min
-        self.fm_freq_max = options.freq_max
+        self.fm_freq_min = args.freq_min
+        self.fm_freq_max = args.freq_max
 
         # build graph
         stream_args = uhd.stream_args('fc32', channels=range(2))
-        self.u = uhd.usrp_source(device_addr=options.args, stream_args=stream_args)
+        self.u = uhd.usrp_source(device_addr=args.args, stream_args=stream_args)
 
         # Set front end channel mapping
-        self.u.set_subdev_spec(options.spec)
+        self.u.set_subdev_spec(args.spec)
 
         usrp_rate  = 320e3
         demod_rate = 320e3
@@ -93,7 +89,7 @@ class wfm_rx_block (gr.top_block):
             sys.exit(1)
 
         # sound card as final sink
-        self.audio_sink = audio.sink(int(audio_rate), options.audio_output)
+        self.audio_sink = audio.sink(int(audio_rate), args.audio_output)
 
         # taps for channel filter
         nfilts = 32
@@ -108,10 +104,10 @@ class wfm_rx_block (gr.top_block):
         # set front end PLL to middle frequency
         mid_freq = (f[0] + f[1]) / 2.0
 
-        if options.gain is None:
+        if args.gain is None:
             # if no gain was specified, use the mid-point in dB
             g = self.u.get_gain_range()
-            options.gain = float(g.start()+g.stop())/2.0
+            args.gain = float(g.start()+g.stop())/2.0
 
         for n in range(2):
            chan_filt = filter.pfb.arb_resampler_ccf(rrate, chan_coeffs, nfilts)
@@ -135,11 +131,11 @@ class wfm_rx_block (gr.top_block):
            self.u.set_center_freq(tr, n)
 
            # Set gain for each channel
-           self.set_gain(options.gain, n)
+           self.set_gain(args.gain, n)
 
            # Set the antenna
-           if(options.antenna):
-               self.u.set_antenna(options.antenna, n)
+           if(args.antenna):
+               self.u.set_antenna(args.antenna, n)
 
     def set_vol (self, vol):
         self.vol = vol
