@@ -35,8 +35,8 @@
 
 from gnuradio import gr, digital
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 # from current dir
 from receive_path import receive_path
@@ -87,18 +87,18 @@ class my_top_block(gr.top_block):
     def __init__(self, callback, options):
         gr.top_block.__init__(self)
 
-        self.source = uhd_receiver(options.args,
-                                   options.bandwidth,
-                                   options.rx_freq,
-                                   options.lo_offset, options.rx_gain,
-                                   options.spec, options.antenna,
-                                   options.clock_source, options.verbose)
+        self.source = uhd_receiver(args.args,
+                                   args.bandwidth,
+                                   args.rx_freq,
+                                   args.lo_offset, args.rx_gain,
+                                   args.spec, args.antenna,
+                                   args.clock_source, args.verbose)
 
-        self.sink = uhd_transmitter(options.args,
-                                    options.bandwidth, options.tx_freq,
-                                    options.lo_offset, options.tx_gain,
-                                    options.spec, options.antenna,
-                                    options.clock_source, options.verbose)
+        self.sink = uhd_transmitter(args.args,
+                                    args.bandwidth, args.tx_freq,
+                                    args.lo_offset, args.tx_gain,
+                                    args.spec, args.antenna,
+                                    args.clock_source, args.verbose)
 
         self.txpath = transmit_path(options)
         self.rxpath = receive_path(callback, options)
@@ -190,38 +190,34 @@ class cs_mac(object):
 
 def main():
 
-    parser = OptionParser (option_class=eng_option, conflict_handler="resolve")
-    expert_grp = parser.add_option_group("Expert")
+    parser = ArgumentParser(conflict_handler="resolve")
+    expert_grp = parser.add_argument_group("Expert")
 
-    parser.add_option("-m", "--modulation", type="choice", choices=['bpsk', 'qpsk'],
+    parser.add_argument("-m", "--modulation", type="choice", choices=['bpsk', 'qpsk'],
                       default='bpsk',
                       help="Select modulation from: bpsk, qpsk [default=%%default]")
     
-    parser.add_option("-v","--verbose", action="store_true", default=False)
-    expert_grp.add_option("-c", "--carrier-threshold", type="eng_float", default=30,
+    parser.add_argument("-v","--verbose", action="store_true", default=False)
+    expert_grp.add_option("-c", "--carrier-threshold", type=eng_float, default=30,
                           help="set carrier detect threshold (dB) [default=%default]")
     expert_grp.add_option("","--tun-device-filename", default="/dev/net/tun",
                           help="path to tun device file [default=%default]")
 
-    digital.ofdm_mod.add_options(parser, expert_grp)
-    digital.ofdm_demod.add_options(parser, expert_grp)
-    transmit_path.add_options(parser, expert_grp)
-    receive_path.add_options(parser, expert_grp)
-    uhd_receiver.add_options(parser)
-    uhd_transmitter.add_options(parser)
+    digital.ofdm_mod.add_arguments(parser, expert_grp)
+    digital.ofdm_demod.add_arguments(parser, expert_grp)
+    transmit_path.add_arguments(parser, expert_grp)
+    receive_path.add_arguments(parser, expert_grp)
+    uhd_receiver.add_arguments(parser)
+    uhd_transmitter.add_arguments(parser)
 
-    (options, args) = parser.parse_args ()
-    if len(args) != 0:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-
-    if options.rx_freq is None or options.tx_freq is None:
+    args = parser.parse_args()
+    if args.rx_freq is None or args.tx_freq is None:
         sys.stderr.write("You must specify -f FREQ or --freq FREQ\n")
         parser.print_help(sys.stderr)
         sys.exit(1)
 
     # open the TUN/TAP interface
-    (tun_fd, tun_ifname) = open_tun_interface(options.tun_device_filename)
+    (tun_fd, tun_ifname) = open_tun_interface(args.tun_device_filename)
 
     # Attempt to enable realtime scheduling
     r = gr.enable_realtime_scheduling()
@@ -240,11 +236,11 @@ def main():
 
     mac.set_flow_graph(tb)    # give the MAC a handle for the PHY
 
-    print "modulation:     %s"   % (options.modulation,)
-    print "freq:           %s"      % (eng_notation.num_to_str(options.tx_freq))
+    print "modulation:     %s"   % (args.modulation,)
+    print "freq:           %s"      % (eng_notation.num_to_str(args.tx_freq))
 
-    tb.rxpath.set_carrier_threshold(options.carrier_threshold)
-    print "Carrier sense threshold:", options.carrier_threshold, "dB"
+    tb.rxpath.set_carrier_threshold(args.carrier_threshold)
+    print "Carrier sense threshold:", args.carrier_threshold, "dB"
     
     print
     print "Allocated virtual ethernet interface: %s" % (tun_ifname,)
