@@ -24,8 +24,8 @@ from gnuradio import gr, audio, uhd
 from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import eng_notation
-from gnuradio.eng_option import eng_option
-from optparse import OptionParser
+from gnuradio.eng_arg import eng_float, intx
+from argparse import ArgumentParser
 
 from gnuradio import blocks
 from gnuradio import digital
@@ -66,14 +66,14 @@ class my_top_block(gr.top_block):
     def __init__(self, demod_class, rx_callback, options):
         gr.top_block.__init__(self)
         self.rxpath = receive_path(demod_class, rx_callback, options)
-        self.audio_tx = audio_tx(options.audio_output)
+        self.audio_tx = audio_tx(args.audio_output)
 
-        if(options.rx_freq is not None):
-            self.source = uhd_receiver(options.args, options.bitrate,
-                                       options.samples_per_symbol,
-                                       options.rx_freq, options.rx_gain,
-                                       options.antenna, options.verbose)
-            options.samples_per_symbol = self.source._sps
+        if(args.rx_freq is not None):
+            self.source = uhd_receiver(args.args, args.bitrate,
+                                       args.samples_per_symbol,
+                                       args.rx_freq, args.rx_gain,
+                                       args.antenna, args.verbose)
+            args.samples_per_symbol = self.source._sps
 
             audio_rate = self.audio_tx.sample_rate
             usrp_rate = self.source.get_sample_rate()
@@ -82,9 +82,9 @@ class my_top_block(gr.top_block):
             
             self.connect(self.source, self.resampler, self.rxpath)
 
-        elif(options.from_file is not None):
-            self.thr = blocks.throttle(gr.sizeof_gr_complex, options.bitrate)
-            self.source = blocks.file_source(gr.sizeof_gr_complex, options.from_file)
+        elif(args.from_file is not None):
+            self.thr = blocks.throttle(gr.sizeof_gr_complex, args.bitrate)
+            self.source = blocks.file_source(gr.sizeof_gr_complex, args.from_file)
             self.connect(self.source, self.thr, self.rxpath)
 
         else:
@@ -120,39 +120,35 @@ def main():
     demods = digital.modulation_utils.type_1_demods()
 
     # Create Options Parser:
-    parser = OptionParser (option_class=eng_option, conflict_handler="resolve")
-    expert_grp = parser.add_option_group("Expert")
+    parser = ArgumentParser(conflict_handler="resolve")
+    expert_grp = parser.add_argument_group("Expert")
 
-    parser.add_option("-m", "--modulation", type="choice", choices=demods.keys(), 
+    parser.add_argument("-m", "--modulation", choices=demods.keys(),
                       default='gmsk',
-                      help="Select modulation from: %s [default=%%default]"
+                      help="Select modulation from: %s [default=%%(default)r]"
                             % (', '.join(demods.keys()),))
-    parser.add_option("-O", "--audio-output", type="string", default="",
+    parser.add_argument("-O", "--audio-output", default="",
                       help="pcm output device name.  E.g., hw:0,0 or /dev/dsp")
-    parser.add_option("","--from-file", default=None,
+    parser.add_argument("--from-file",
                       help="input file of samples to demod")
-    receive_path.add_options(parser, expert_grp)
-    uhd_receiver.add_options(parser)
+    receive_path.add_arguments(parser, expert_grp)
+    uhd_receiver.add_arguments(parser)
 
     for mod in demods.values():
-        mod.add_options(expert_grp)
+        mod.add_arguments(expert_grp)
 
     parser.set_defaults(bitrate=50e3)  # override default bitrate default
-    (options, args) = parser.parse_args ()
+    args = parser.parse_args()
 
-    if len(args) != 0:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-
-    if options.from_file is None:
-        if options.rx_freq is None:
+    if args.from_file is None:
+        if args.rx_freq is None:
             sys.stderr.write("You must specify -f FREQ or --freq FREQ\n")
             parser.print_help(sys.stderr)
             sys.exit(1)
 
 
     # build the graph
-    tb = my_top_block(demods[options.modulation], rx_callback, options)
+    tb = my_top_block(demods[args.modulation], rx_callback, options)
 
     r = gr.enable_realtime_scheduling()
     if r != gr.RT_OK:
