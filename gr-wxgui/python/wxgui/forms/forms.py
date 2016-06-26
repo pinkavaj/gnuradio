@@ -533,7 +533,7 @@ import wx
 from gnuradio.wxgui import gui
 
 class app_gui (object):
-    def __init__(self, frame, panel, vbox, top_block, options, args):
+    def __init__(self, frame, panel, vbox, top_block, args):
 
         def callback(v): print v
 
