@@ -57,15 +57,15 @@ def add_type_1_constellation(name, constellation):
     _type_1_constellations[name] = constellation
 
 
-def extract_kwargs_from_args(function, excluded_args, options):
+def extract_kwargs_from_args(function, excluded_args, args):
     """
     Given a function, a list of excluded arguments and the result of
     parsing command line options, create a dictionary of key word
     arguments suitable for passing to the function.  The dictionary
     will be populated with key/value pairs where the keys are those
     that are common to the function's argument list (minus the
-    excluded_args) and the attributes in options.  The values are the
-    corresponding values from options unless that value is None.
+    excluded_args) and the attributes in args.  The values are the
+    corresponding values from args unless that value is None.
     In that case, the corresponding dictionary entry is not populated.
 
     (This allows different modulations that have the same parameter
@@ -77,25 +77,25 @@ def extract_kwargs_from_args(function, excluded_args, options):
     Args:
         function: the function whose parameter list will be examined
         excluded_args: function arguments that are NOT to be added to the dictionary (sequence of strings)
-        options: result of command argument parsing (argparse.parse_args())
+        args: result of command argument parsing (argparse.parse_args())
     """
     
     # Try this in C++ ;)
-    args, varargs, varkw, defaults = inspect.getargspec(function)
+    f_args, varargs, varkw, defaults = inspect.getargspec(function)
     d = {}
-    for kw in [a for a in args if a not in excluded_args]:
-        if hasattr(options, kw):
-            if getattr(options, kw) is not None:
-                d[kw] = getattr(options, kw)
+    for kw in [a for a in f_args if a not in excluded_args]:
+        if hasattr(args, kw):
+            if getattr(args, kw) is not None:
+                d[kw] = getattr(args, kw)
     return d
 
-def extract_kwargs_from_args_for_class(cls, options):
+def extract_kwargs_from_args_for_class(cls, args):
     """
-    Given command line options, create dictionary suitable for passing to __init__
+    Given command line args, create dictionary suitable for passing to __init__
     """
     d = extract_kwargs_from_args(
-        cls.__init__, ('self',), options)
+        cls.__init__, ('self',), args)
     for base in cls.__bases__:
         if hasattr(base, 'extract_kwargs_from_args'):
-            d.update(base.extract_kwargs_from_args(options))
+            d.update(base.extract_kwargs_from_args(args))
     return d
